@@ -1,5 +1,6 @@
 package sk.maps;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import static java.lang.String.format;
@@ -37,7 +38,8 @@ public class Map extends View {
 	private int height;
 
 	private List<Layer> layers = Collections.emptyList();
-
+	private List<Bitmap> tiles = new ArrayList<Bitmap>();
+	
 	private Paint mapStyle;
 	private Paint tileStyle;
 	private Paint screenBorderStyle;
@@ -63,7 +65,7 @@ public class Map extends View {
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 		buildTextTextures();
-		setZoom(5);
+		setZoom(1);
 	}
 
 	private Bitmap textBuffer;
@@ -106,6 +108,13 @@ public class Map extends View {
 	protected void onZoomChange(int oldZoom, int zoom) {
 		tileWidth = tileWidthPx * getResolution();
 		tileHeight = tileHeightPx * getResolution();
+		/*
+		RectF tileBbox = new RectF(bbox.minX, bbox.minY, bbox.minX+256*getResolution(), bbox.minY+256*getResolution());
+		Bitmap tile = new WmsLayer().requestTile(tileBbox, 256, 256);
+		if (tile != null) {
+			tiles.add(tile);
+		}
+		*/
 	}
 
 	private PointF centerAtDragStart;
@@ -229,6 +238,10 @@ public class Map extends View {
 		if (true) return;
 		*/
 		// draw "x="
+		if (x == 0 && y == 0 && tiles.size() > 0) {
+			canvas.drawBitmap(tiles.get(tiles.size()-1), startP.x, startP.y, null);
+		}
+		
 		int xPos = (int) startP.x+50;
 		int yPos = (int) startP.y+127;
 		
