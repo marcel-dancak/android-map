@@ -108,13 +108,13 @@ public class Map extends View {
 	protected void onZoomChange(int oldZoom, int zoom) {
 		tileWidth = tileWidthPx * getResolution();
 		tileHeight = tileHeightPx * getResolution();
-		/*
+		
 		RectF tileBbox = new RectF(bbox.minX, bbox.minY, bbox.minX+256*getResolution(), bbox.minY+256*getResolution());
 		Bitmap tile = new WmsLayer().requestTile(tileBbox, 256, 256);
 		if (tile != null) {
 			tiles.add(tile);
 		}
-		*/
+		
 	}
 
 	private PointF centerAtDragStart;
@@ -170,7 +170,7 @@ public class Map extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		float scale = 0.5f; 
+		float scale = 1.0f; 
 		canvas.scale(scale, scale, width / 2f, height / 2f);
 		// float cx = width/2.0f;
 		// float cy = height/2.0f;
@@ -183,7 +183,9 @@ public class Map extends View {
 
 		PointF startP = mapToScreen(bbox.minX, bbox.minY);
 		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
-		canvas.drawRect(startP.x, startP.y, endP.x, endP.y, mapStyle);
+		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
+		//canvas.drawRect(startP.x, startP.y, endP.x, endP.y, mapStyle);
+		canvas.drawRect(startP.x, endP.y, endP.x, startP.y, mapStyle);
 		/*
 		 * float sx = startP.x > 0? startP.x : 0; float sy = startP.y > 0?
 		 * startP.y : 0; float ex = endP.x < width? endP.x : width; float ey =
@@ -193,16 +195,15 @@ public class Map extends View {
 
 		canvas.drawRect(1, 1, width, height, screenBorderStyle);
 		// Log.d(TAG, format("first tile [%f, %f]", startP.x, startP.y));
-
-		PointF o = screenToMap(0, 0);
+		
+		PointF o = screenToMap(0, height);
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
 			return;
 		}
-		Point s = getTileAtScreen(0, 0);
-		Point e = getTileAtScreen(width, height);
-		// Log.i(TAG,
-		// format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x,
-		// s.y, e.x, e.y));
+		Point s = getTileAtScreen(0, height);
+		Point e = getTileAtScreen(width, 0);
+		
+		//Log.i(TAG, format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x, s.y, e.x, e.y));
 		int lastTileX = (int) ((bbox.maxX - bbox.minX) / tileWidth);
 		int lastTileY = (int) ((bbox.maxY - bbox.minY) / tileHeight);
 
@@ -230,21 +231,22 @@ public class Map extends View {
 
 	private void drawTile(Canvas canvas, int x, int y) {
 		PointF startP = mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
-		canvas.drawRect(startP.x, startP.y, startP.x + 256, startP.y + 256, tileStyle);
+		canvas.drawRect(startP.x, startP.y - 256, startP.x + 256, startP.y, tileStyle);
 		/*
 		canvas.drawText(format("x=%d y=%d", x, y),
 			startP.x+50, startP.y+127,
 			tileStyle);
 		if (true) return;
 		*/
-		// draw "x="
+		
 		if (x == 0 && y == 0 && tiles.size() > 0) {
-			canvas.drawBitmap(tiles.get(tiles.size()-1), startP.x, startP.y, null);
+			canvas.drawBitmap(tiles.get(tiles.size()-1), startP.x, startP.y-256, null);
 		}
 		
 		int xPos = (int) startP.x+50;
-		int yPos = (int) startP.y+127;
+		int yPos = (int) startP.y-127;
 		
+		// draw "x="
 		canvas.drawBitmap(textBuffer,
 				new Rect(0, 310, 25, 340),
 				new Rect(xPos, yPos, xPos+25, yPos+30),
@@ -280,21 +282,21 @@ public class Map extends View {
 
 	private PointF screenToMap2(float x, float y) {
 		float offsetX = x - width / 2f;
-		float offsetY = y - height / 2f;
+		float offsetY = (height / 2f) - y;
 		return new PointF(centerAtDragStart.x + offsetX * getResolution(), centerAtDragStart.y
 				+ offsetY * getResolution());
 	}
 
 	private PointF screenToMap(float x, float y) {
 		float offsetX = x - width / 2f;
-		float offsetY = y - height / 2f;
+		float offsetY = (height / 2f) - y;
 		return new PointF(center.x + offsetX * getResolution(), center.y + offsetY
 				* getResolution());
 	}
 
 	private PointF mapToScreen(float x, float y) {
 		float offsetX = x - center.x;
-		float offsetY = y - center.y;
+		float offsetY = center.y - y;
 		return new PointF(width / 2f + offsetX / getResolution(), height / 2f + offsetY
 				/ getResolution());
 	}

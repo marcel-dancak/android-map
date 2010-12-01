@@ -23,7 +23,7 @@ public class WmsLayer extends Layer {
 			String bboxEncoded = URLEncoder.encode(format("%f,%f,%f,%f", bbox.left, bbox.top, bbox.right, bbox.bottom)); 
 			Log.i(TAG, bboxEncoded);
 			//Log.i(TAG, URLDecoder.decode("http://localhost/cgi-bin/mapserv?map=/var/www/mapfiles/test.map&layers=countries&styles=&service=WMS&width=512&format=image%2Fpng&request=GetMap&height=612&srs=EPSG%3A4326&version=1.1.1&bbox=-215.15625%2C-125.15625%2C395.15625%2C305.15625"));
-			url = new URL("http://192.168.2.2/cgi-bin/mapserv?map=/var/www/mapfiles/test.map" +
+			url = new URL("http://192.168.2.1/cgi-bin/mapserv?map=/var/www/mapfiles/test.map" +
 					"&layers=countries&styles=&service=WMS&format=image%2Fpng&request=GetMap" +
 					"&version=1.1.1&srs=EPSG%3A4326" +
 					"&width=256&height=256&bbox="+bboxEncoded);
