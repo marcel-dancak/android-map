@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import static java.lang.String.format;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -19,9 +20,11 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import sk.maps.Layer.Tile;
+import sk.maps.Layer.TileListener;
 import sk.utils.Utils;
 
-public class Map extends View {
+public class Map extends View implements TileListener {
 
 	private static String TAG = Map.class.getName();
 
@@ -41,7 +44,7 @@ public class Map extends View {
 
 	private List<Layer> layers = Collections.emptyList();
 	private TmsLayer tmsLayer;
-	private java.util.Map<String, Bitmap> tiles = new HashMap<String, Bitmap>();
+	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
 	
 	private Paint mapStyle;
 	private Paint tileStyle;
@@ -71,6 +74,7 @@ public class Map extends View {
 
 		buildTextTextures();
 		tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
+		tmsLayer.addTileListener(this);
 		setZoom(1);
 	}
 
@@ -243,19 +247,18 @@ public class Map extends View {
 
 	private void drawTile(Canvas canvas, int x, int y) {
 		String tileKey = format("%d:%d", x, y);
-		Bitmap tile = null;
+		Tile tile = null;
 		if (tiles.containsKey(tileKey)) {
 			tile = tiles.get(tileKey);
 		} else {
-			tile = tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
-			if (tile != null) {
-				tiles.put(tileKey, tile);
-			}
+			tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+			tile = new Tile(x, y, null);
+			tiles.put(tileKey, tile);
 		}
 		
 		PointF startP = mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
-		if (tile != null) {
-			canvas.drawBitmap(tile, startP.x, startP.y-256, null);
+		if (tile.getImage() != null) {
+			canvas.drawBitmap(tile.getImage(), startP.x, startP.y-256, null);
 		}
 		if (true) return;
 		
@@ -328,5 +331,20 @@ public class Map extends View {
 	private float getResolution() {
 		//return 1.125f / zoom;
 		return (float) resolutions[zoom-1];
+	}
+
+	@Override
+	public void onTileLoad(Tile tile) {
+		String tileKey = format("%d:%d", tile.getX(), tile.getY());
+		if (tiles.containsKey(tileKey)) {
+			tiles.put(tileKey, tile);
+			post(new Runnable() {
+				
+				@Override
+				public void run() {
+					invalidate();
+				}
+			});
+		}
 	}
 }
