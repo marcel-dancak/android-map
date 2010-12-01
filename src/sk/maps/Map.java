@@ -70,6 +70,7 @@ public class Map extends View implements TileListener {
 		screenBorderStyle = new Paint();
 		screenBorderStyle.setStyle(Paint.Style.STROKE);
 		screenBorderStyle.setStrokeWidth(2f);
+		screenBorderStyle.setAntiAlias(true);
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 		buildTextTextures();
@@ -232,6 +233,9 @@ public class Map extends View implements TileListener {
 				drawTile(canvas, i, j);
 			}
 		}
+		
+		PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
+		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		//canvas.drawBitmap(textBuffer, 0, 0, null);
 		//drawTile(canvas, 0, 0);
 	}
