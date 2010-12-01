@@ -2,6 +2,7 @@ package sk.maps;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import static java.lang.String.format;
 
@@ -39,7 +40,8 @@ public class Map extends View {
 	private int height;
 
 	private List<Layer> layers = Collections.emptyList();
-	private List<Bitmap> tiles = new ArrayList<Bitmap>();
+	private TmsLayer tmsLayer;
+	private java.util.Map<String, Bitmap> tiles = new HashMap<String, Bitmap>();
 	
 	private Paint mapStyle;
 	private Paint tileStyle;
@@ -68,6 +70,7 @@ public class Map extends View {
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 		buildTextTextures();
+		tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
 		setZoom(1);
 	}
 
@@ -106,6 +109,7 @@ public class Map extends View {
 		Log.i(TAG, format("width: %d height: %d", w, h));
 		width = w;
 		height = h;
+		clearTiles();
 	}
 
 	protected void onZoomChange(int oldZoom, int zoom) {
@@ -118,13 +122,13 @@ public class Map extends View {
 			tiles.add(tile);
 		}
 		*/
-		TmsLayer tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
-		Bitmap tile = tmsLayer.requestTile(zoom, 0, 0, tileWidthPx, tileHeightPx);
-		if (tile != null) {
-			tiles.add(tile);
-		}
+		clearTiles();
 	}
 
+	private void clearTiles() {
+		tiles.clear();
+	}
+	
 	private PointF centerAtDragStart;
 	private PointF dragStart;
 
@@ -178,8 +182,8 @@ public class Map extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		float scale = 1.0f; 
-		canvas.scale(scale, scale, width / 2f, height / 2f);
+		//float scale = 1.0f; 
+		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		// float cx = width/2.0f;
 		// float cy = height/2.0f;
 		// Log.d(TAG, format("center [%f, %f]", cx, cy));
@@ -238,7 +242,23 @@ public class Map extends View {
 	}
 
 	private void drawTile(Canvas canvas, int x, int y) {
+		String tileKey = format("%d:%d", x, y);
+		Bitmap tile = null;
+		if (tiles.containsKey(tileKey)) {
+			tile = tiles.get(tileKey);
+		} else {
+			tile = tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+			if (tile != null) {
+				tiles.put(tileKey, tile);
+			}
+		}
+		
 		PointF startP = mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
+		if (tile != null) {
+			canvas.drawBitmap(tile, startP.x, startP.y-256, null);
+		}
+		if (true) return;
+		
 		canvas.drawRect(startP.x, startP.y - 256, startP.x + 256, startP.y, tileStyle);
 		/*
 		canvas.drawText(format("x=%d y=%d", x, y),
@@ -246,10 +266,6 @@ public class Map extends View {
 			tileStyle);
 		if (true) return;
 		*/
-		
-		if (x == 0 && y == 0 && tiles.size() > 0) {
-			canvas.drawBitmap(tiles.get(tiles.size()-1), startP.x, startP.y-256, null);
-		}
 		
 		int xPos = (int) startP.x+50;
 		int yPos = (int) startP.y-127;
