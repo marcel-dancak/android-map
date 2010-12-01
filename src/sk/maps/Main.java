@@ -21,7 +21,9 @@ public class Main extends Activity {
         
         List<Layer> layers = new ArrayList<Layer>();
         layers.add(new Layer());
-        final Map map = new Map(this, layers);
+        BBox bbox = new BBox(21.1466999999999992f, 48.9388000000000005f, 21.3455000000000013f, 49.0544000000000011f);
+        double resolutions[] = {0.00158739084402105, 0.00031747816880421, 0.00015873908440210, 0.00007936954220105, 0.00003174781688042, 0.00001587390844021, 0.00000793695422011, 0.00000317478168804, 0.00000158739084402};
+        final Map map = new Map(this, bbox, resolutions, layers);
         
         //layers.remove(0);
         

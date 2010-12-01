@@ -26,6 +26,7 @@ public class Map extends View {
 
 	private PointF center;
 	private BBox bbox;
+	private double resolutions[];
 	private int zoom = -1;
 
 	private float tileWidth;
@@ -44,10 +45,12 @@ public class Map extends View {
 	private Paint tileStyle;
 	private Paint screenBorderStyle;
 
-	public Map(Context context, List<Layer> layers) {
+	public Map(Context context, BBox bbox, double resolutions[], List<Layer> layers) {
 		super(context);
 		this.layers = Collections.unmodifiableList(layers);
-		bbox = new BBox(-180, -90, 180, 90);
+		this.bbox = bbox;
+		this.resolutions = resolutions;
+		
 		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
 
 		mapStyle = new Paint();
@@ -307,6 +310,7 @@ public class Map extends View {
 	}
 
 	private float getResolution() {
-		return 1.125f / zoom;
+		//return 1.125f / zoom;
+		return (float) resolutions[zoom-1];
 	}
 }
