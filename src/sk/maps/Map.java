@@ -108,13 +108,18 @@ public class Map extends View {
 	protected void onZoomChange(int oldZoom, int zoom) {
 		tileWidth = tileWidthPx * getResolution();
 		tileHeight = tileHeightPx * getResolution();
-		
+		/*
 		RectF tileBbox = new RectF(bbox.minX, bbox.minY, bbox.minX+256*getResolution(), bbox.minY+256*getResolution());
 		Bitmap tile = new WmsLayer().requestTile(tileBbox, 256, 256);
 		if (tile != null) {
 			tiles.add(tile);
 		}
-		
+		*/
+		TmsLayer tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
+		Bitmap tile = tmsLayer.requestTile(zoom, 0, 0, tileWidthPx, tileHeightPx);
+		if (tile != null) {
+			tiles.add(tile);
+		}
 	}
 
 	private PointF centerAtDragStart;
