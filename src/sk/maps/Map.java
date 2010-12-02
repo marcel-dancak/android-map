@@ -228,9 +228,26 @@ public class Map extends View implements TileListener {
 		lastTileY = e.y < lastTileY ? e.y : lastTileY;
 		int firstTileX = s.x > 0 ? s.x : 0;
 		int firstTileY = s.y > 0 ? s.y : 0;
-		for (int i = firstTileX; i <= lastTileX; i++) {
-			for (int j = firstTileY; j <= lastTileY; j++) {
-				drawTile(canvas, i, j);
+		PointF fixedPoint = mapToScreen(bbox.minX + tileWidth * firstTileX, bbox.minY + tileHeight * firstTileY);
+		int sx = (int) fixedPoint.x;
+		int sy = (int) fixedPoint.y;
+		
+		//Log.i(TAG, format("sx=%d sy=%d firstTileX=%d firstTileY=%d", sx, sy, firstTileX, firstTileY));
+		for (int x = firstTileX; x <= lastTileX; x++) {
+			for (int y = firstTileY; y <= lastTileY; y++) {
+				String tileKey = format("%d:%d", x, y);
+				Tile tile = null;
+				if (tiles.containsKey(tileKey)) {
+					tile = tiles.get(tileKey);
+				} else {
+					tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+					tile = new Tile(x, y, null);
+					tiles.put(tileKey, tile);
+				}
+				if (tile.getImage() != null) {
+					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy-(y-firstTileY+1)*256, null);
+				}
+				//drawTile(canvas, x, y);
 			}
 		}
 		
@@ -260,13 +277,20 @@ public class Map extends View implements TileListener {
 			tiles.put(tileKey, tile);
 		}
 		
+		/* tests if there can be some rounding errors
+		PointF startP = mapToScreen(bbox.minX + (tileWidthPx*x)*getResolution(), bbox.minY + (tileHeightPx*y)*getResolution());
+		Log.i(TAG, format("x diff %f, y diff %f",
+				(((tileWidthPx*x)*getResolution())-tileWidth*x),
+				(((tileHeightPx*y)*getResolution())-tileHeight*y)
+				));
+		*/
 		PointF startP = mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
 		if (tile.getImage() != null) {
-			canvas.drawBitmap(tile.getImage(), startP.x, startP.y-256, null);
+			canvas.drawBitmap(tile.getImage(), startP.x, startP.y-256f, null);
 		}
 		if (true) return;
 		
-		canvas.drawRect(startP.x, startP.y - 256, startP.x + 256, startP.y, tileStyle);
+		canvas.drawRect(startP.x, startP.y - 256f, startP.x + 256f, startP.y, tileStyle);
 		/*
 		canvas.drawText(format("x=%d y=%d", x, y),
 			startP.x+50, startP.y+127,
