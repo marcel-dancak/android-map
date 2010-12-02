@@ -1,12 +1,15 @@
 package sk.maps;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import com.jhlabs.geom.Point2D;
+import com.jhlabs.map.proj.Projection;
+import com.jhlabs.map.proj.ProjectionFactory;
+
 import static java.lang.String.format;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -31,6 +34,7 @@ public class Map extends View implements TileListener {
 	private PointF center;
 	private BBox bbox;
 	private double resolutions[];
+	private Projection proj;
 	private int zoom = -1;
 
 	private float tileWidth;
@@ -74,9 +78,25 @@ public class Map extends View implements TileListener {
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 		buildTextTextures();
-		tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
+		//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
+		tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_gg_ortofoto_2009", "jpeg");
 		tmsLayer.addTileListener(this);
 		setZoom(1);
+		
+		String[] params = {
+				"+proj=merc",
+				"+a=6378137",
+				"+b=6378137",
+				"+lat_ts=0.0",
+				"+lon_0=0.0",
+				"+x_0=0.0",
+				"+y_0=0",
+				"+k=1.0",
+				"+units=m",
+				"+nadgrids=@null",
+				"+no_defs"
+			};
+		proj = ProjectionFactory.fromPROJ4Specification(params);
 	}
 
 	private Bitmap textBuffer;
@@ -251,10 +271,17 @@ public class Map extends View implements TileListener {
 				//drawTile(canvas, x, y);
 			}
 		}
-		/*
-		PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
+		
+		Point2D p = new Point2D();
+		proj.transform(new Point2D(21.23886386, 49.00096926), p);
+		Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
+		PointF currentPos = mapToScreen((float) p.x, (float) p.y);
+		//PointF currentPos = mapToScreen(2367713, 6276560);
+		//bbox = 2351125 2376721
+		Log.i(TAG, format("on screen: [%d, %d]", (int) currentPos.x, (int) currentPos.y));
+		//PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
-		*/
+		
 		//canvas.drawBitmap(textBuffer, 0, 0, null);
 		//drawTile(canvas, 0, 0);
 	}
