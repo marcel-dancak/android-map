@@ -187,6 +187,7 @@ public class Map extends View implements TileListener {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
+		canvas.drawRGB(255, 255, 255);
 		//float scale = 1.0f; 
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		// float cx = width/2.0f;
@@ -202,7 +203,7 @@ public class Map extends View implements TileListener {
 		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
 		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
 		//canvas.drawRect(startP.x, startP.y, endP.x, endP.y, mapStyle);
-		canvas.drawRect(startP.x, endP.y, endP.x, startP.y, mapStyle);
+		canvas.drawRect(startP.x, endP.y+1, endP.x, startP.y-1, mapStyle);
 		/*
 		 * float sx = startP.x > 0? startP.x : 0; float sy = startP.y > 0?
 		 * startP.y : 0; float ex = endP.x < width? endP.x : width; float ey =
@@ -210,7 +211,7 @@ public class Map extends View implements TileListener {
 		 * mapStyle);
 		 */
 
-		canvas.drawRect(1, 1, width, height, screenBorderStyle);
+		//canvas.drawRect(1, 1, width, height, screenBorderStyle);
 		// Log.d(TAG, format("first tile [%f, %f]", startP.x, startP.y));
 		
 		PointF o = screenToMap(0, height);
@@ -250,9 +251,10 @@ public class Map extends View implements TileListener {
 				//drawTile(canvas, x, y);
 			}
 		}
-		
+		/*
 		PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
+		*/
 		//canvas.drawBitmap(textBuffer, 0, 0, null);
 		//drawTile(canvas, 0, 0);
 	}
