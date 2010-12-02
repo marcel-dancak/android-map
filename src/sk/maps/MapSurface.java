@@ -430,5 +430,13 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
                 }
             }
 	    }
+
+		@Override
+		public void onTileLoadingFailed(Tile tile) {
+			String tileKey = format("%d:%d", tile.getX(), tile.getY());
+			if (tiles.containsKey(tileKey)) {
+				tiles.remove(tileKey);
+			}
+		}
 	}
 }

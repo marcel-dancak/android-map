@@ -30,6 +30,12 @@ public class Layer {
 		}
 	}
 	
+	protected void fireTileLoadingFailed(Tile tile) {
+		for (TileListener listener : tileListeners) {
+			listener.onTileLoadingFailed(tile);
+		}
+	}
+	
 	public static class Tile {
 		private int x;
 		private int y;
@@ -56,5 +62,6 @@ public class Layer {
 	
 	public interface TileListener {
 		void onTileLoad(Tile tile);
+		void onTileLoadingFailed(Tile tile);
 	}
 }

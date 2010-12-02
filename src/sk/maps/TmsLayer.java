@@ -29,26 +29,23 @@ public class TmsLayer extends Layer {
 				try {
 					String query = format("/1.0.0/%s/%d/%d/%d.%s", name, zoom-1, x, y, format);
 					url = new URL(serverUrl+"/"+query);
-					Log.i(TAG, url.toString());
+					//Log.i(TAG, url.toString());
 					HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-					Log.i(TAG, "Content Type: "+httpCon.getContentType());
-					Log.i(TAG, "Content Length: "+httpCon.getContentLength());
+					//Log.i(TAG, "Content Type: "+httpCon.getContentType());
+					//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
 					
-					//BufferedInputStream imageStream = new BufferedInputStream(httpCon.getInputStream());
-					for (int i = 0; i < 10; i++) {
-						//Log.i(TAG, ""+imageStream.read());
-					}
 					Bitmap image = BitmapFactory.decodeStream(httpCon.getInputStream());
-					Log.i(TAG, "image: "+image);
 					//imageStream.close();
 					if (image != null) {
-						Log.i(TAG, format("Get image %d x %d", image.getWidth(), image.getHeight()));
+						//Log.i(TAG, format("Get image %d x %d", image.getWidth(), image.getHeight()));
 						fireTileLoad(new Tile(x, y, image));
+						return;
 					}
 				} catch (Exception e) {
 					Log.e(TAG, "what!", e);
 					e.printStackTrace();
 				}
+				fireTileLoadingFailed(new Tile(x, y, null));
 			}
 		};
 		t.start();
