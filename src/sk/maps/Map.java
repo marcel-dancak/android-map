@@ -46,7 +46,7 @@ public class Map extends View implements TileListener {
 	private int width;
 	private int height;
 
-	private List<Layer> layers = Collections.emptyList();
+	//private List<Layer> layers = Collections.emptyList();
 	private TmsLayer tmsLayer;
 	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
 	
@@ -54,9 +54,10 @@ public class Map extends View implements TileListener {
 	private Paint tileStyle;
 	private Paint screenBorderStyle;
 
-	public Map(Context context, BBox bbox, double resolutions[], List<Layer> layers) {
+	public Map(Context context, BBox bbox, double resolutions[], TmsLayer layer) {
 		super(context);
-		this.layers = Collections.unmodifiableList(layers);
+		//this.layers = Collections.unmodifiableList(layers);
+		this.tmsLayer = layer;
 		this.bbox = bbox;
 		this.resolutions = resolutions;
 		
@@ -79,7 +80,7 @@ public class Map extends View implements TileListener {
 
 		buildTextTextures();
 		//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
-		tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_gg_ortofoto_2009", "jpeg");
+		//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_gg_ortofoto_2009", "jpeg");
 		tmsLayer.addTileListener(this);
 		setZoom(1);
 		

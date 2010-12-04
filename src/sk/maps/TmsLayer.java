@@ -16,7 +16,8 @@ public class TmsLayer extends Layer {
 	private String name;
 	private String format;
 	
-	public TmsLayer(String url, String name, String format) {
+	public TmsLayer(BBox bbox, double[] resolutions, String url, String name, String format) {
+		super(bbox, resolutions);
 		this.serverUrl = url;
 		this.name = name;
 		this.format = format;

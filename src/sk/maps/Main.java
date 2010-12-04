@@ -1,10 +1,20 @@
 package sk.maps;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import sk.utils.Utils;
+
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -13,19 +23,59 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 public class Main extends Activity {
+	private static final String TAG = Main.class.getName();
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //requestWindowFeature(Window.FEATURE_NO_TITLE);
         
-        List<Layer> layers = new ArrayList<Layer>();
-        layers.add(new Layer());
-        //BBox bbox = new BBox(21.1466999999999992f, 48.9388000000000005f, 21.3455000000000013f, 49.0544000000000011f);
-        //double resolutions[] = {0.00158739084402105, 0.00031747816880421, 0.00015873908440210, 0.00007936954220105, 0.00003174781688042, 0.00001587390844021, 0.00000793695422011, 0.00000317478168804, 0.00000158739084402};
-        BBox bbox = new BBox(2351125, 6264883, 2376721, 6283586);
-        double resolutions[] = {176.38879363894028529, 35.27775872778806132, 17.63887936389403066, 8.81943968194701533, 3.52777587277880578, 1.76388793638940289, 0.88194396819470144, 0.35277758727788061, 0.17638879363894031};
-        final Map map = new Map(this, bbox, resolutions, layers);
+        List<TmsLayer> layers = new ArrayList<TmsLayer>();
+        try {
+			//String settings = Utils.httpGet(getString(R.string.settings_url));
+        	String settings = Utils.readInputStream(getResources().openRawResource(R.raw.settings));
+			JSONArray json = new JSONArray(settings);
+			for (int i = 0; i < json.length(); i++) {
+				JSONObject layer = json.getJSONObject(i);
+				assert 1 == layer.names().length();
+				String layerName = layer.names().getString(0);
+				Log.i(TAG, "layer name:"+layerName);
+				
+				JSONObject layerSettings = layer.getJSONObject(layerName);
+				String title = layerSettings.getString("title");
+				String url = layerSettings.getString("url");
+				String extension = layerSettings.getString("extension");
+				String srs = layerSettings.getString("srs");
+				
+				JSONArray resolutionsArray = layerSettings.getJSONArray("resolutions");
+				JSONArray bboxArray = layerSettings.getJSONArray("bbox");
+				double[] resolutions = new double[resolutionsArray.length()];
+				for (int j = 0; j < resolutionsArray.length(); j++) {
+					resolutions[j] = resolutionsArray.getDouble(j);
+				}
+				BBox bbox = new BBox(
+						(float) bboxArray.getDouble(0),
+						(float) bboxArray.getDouble(1),
+						(float) bboxArray.getDouble(2),
+						(float) bboxArray.getDouble(3));
+				
+				layers.add(new TmsLayer(bbox, resolutions, url, layerName, extension));
+				
+				Log.i(TAG, "Title: "+title);
+				Log.i(TAG, "URL: "+url);
+				Log.i(TAG, "Extension: "+extension);
+				Log.i(TAG, "Projection: "+srs);
+			}
+			
+		} catch (IOException e) {
+			Log.e(TAG, e.getMessage(), e);
+		} catch (JSONException e) {
+			Log.e(TAG, e.getMessage(), e);
+		}
+        
+        TmsLayer layer = layers.get(0);
+        final Map map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         //final MapSurface mapSurface = new MapSurface(this, bbox, resolutions);
         
         //layers.remove(0);

@@ -17,6 +17,10 @@ public class WmsLayer extends Layer {
 
 	private static String TAG = WmsLayer.class.getName();
 	
+	public WmsLayer(BBox bbox, double[] resolutions) {
+		super(bbox, resolutions);
+	}
+	
 	public Bitmap requestTile(RectF bbox, int width, int height) {
 		URL url;
 		try {

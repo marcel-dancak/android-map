@@ -4,20 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 
+public abstract class Layer {
 
-public class Layer {
-
-	private BBox bbox;
+	protected BBox bbox;
+	protected double[] resolutions;
+	
 	private List<TileListener> tileListeners = new ArrayList<TileListener>();
 	
-	public void drawTile(Canvas canvas) {
-		Paint style = new Paint();
-		style.setColor(Color.RED);
-		canvas.drawLine(5, 5, 200, 100, style);
+	public Layer(BBox bbox, double[] resolutions) {
+		this.bbox = bbox;
+		this.resolutions = resolutions;
+	}
+	
+	public final BBox getBoundingBox() {
+		return bbox;
+	}
+	
+	public final double[] getResolutions() {
+		return resolutions;
 	}
 	
 	public void addTileListener(TileListener listener) {

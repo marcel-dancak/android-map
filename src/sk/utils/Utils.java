@@ -1,5 +1,17 @@
 package sk.utils;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import android.util.Log;
 import android.view.MotionEvent;
 
@@ -30,5 +42,26 @@ public class Utils {
 		}
 		sb.append("]");
 		Log.d(TAG, sb.toString());
+	}
+	
+	public static String httpGet(String urlstring) throws MalformedURLException, IOException {
+		URL url = new URL(urlstring);
+		HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+		return readInputStream(httpCon.getInputStream());
+	}
+	
+	public static String readFile(String filename) throws IOException {
+		return readInputStream(new FileInputStream(filename));
+	}
+	
+	public static String readInputStream(InputStream is) throws IOException {
+		String line;
+		String response = "";
+		BufferedReader input = new BufferedReader(new InputStreamReader(is));
+		while ((line = input.readLine()) != null) {
+			response += line;
+		}
+		input.close();
+		return response;
 	}
 }

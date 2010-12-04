@@ -128,7 +128,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 			buildTextTextures();
-			tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
+			tmsLayer = new TmsLayer(null, null, "http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
 			tmsLayer.addTileListener(this);
 			setZoom(1);
 	    }
