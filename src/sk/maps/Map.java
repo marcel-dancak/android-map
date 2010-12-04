@@ -27,7 +27,7 @@ import sk.maps.Layer.Tile;
 import sk.maps.Layer.TileListener;
 import sk.utils.Utils;
 
-public class Map extends View implements TileListener {
+public class Map extends View implements TileListener, MapView {
 
 	private static String TAG = Map.class.getName();
 
@@ -117,7 +117,7 @@ public class Map extends View implements TileListener {
 		canvas.drawText("y=", 0, 370, tileStyle);
 	}
 
-	public int getZoomLevel() {
+	public int getZoom() {
 		return zoom;
 	}
 	

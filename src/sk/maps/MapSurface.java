@@ -26,7 +26,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
+public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, MapView {
 
 	private static final String TAG = MapSurface.class.getName();
 	
@@ -56,7 +56,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 		return mapThread.onTouchEvent(event);
 	}
 	
-	public int getZoomLevel() {
+	public int getZoom() {
 		return mapThread.getZoomLevel();
 	}
 	

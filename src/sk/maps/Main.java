@@ -75,8 +75,8 @@ public class Main extends Activity {
 		}
         
         TmsLayer layer = layers.get(0);
-        final Map map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
-        //final MapSurface mapSurface = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        //final MapView map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        final MapView map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         
         //layers.remove(0);
         
@@ -86,8 +86,7 @@ public class Main extends Activity {
 			
 			@Override
 			public void onClick(View v) {
-				map.setZoom(map.getZoomLevel()+1);
-				//mapSurface.setZoom(map.getZoomLevel()+1);
+				map.setZoom(map.getZoom()+1);
 			}
 		});
         
@@ -97,9 +96,8 @@ public class Main extends Activity {
 			
 			@Override
 			public void onClick(View v) {
-				if (map.getZoomLevel() > 1) {
-					map.setZoom(map.getZoomLevel()-1);
-					//mapSurface.setZoom(mapSurface.getZoomLevel()-1);
+				if (map.getZoom() > 1) {
+					map.setZoom(map.getZoom()-1);
 				}
 			}
 		});
@@ -109,7 +107,7 @@ public class Main extends Activity {
         zoomControls.addView(zoomOut);
         zoomControls.addView(zoomIn);
         
-        layout.addView(map);
+        layout.addView((View) map);
         //layout.addView(mapSurface);
         layout.addView(zoomControls);
         setContentView(layout);
