@@ -6,6 +6,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import com.jhlabs.geom.Point2D;
+import com.jhlabs.map.proj.Projection;
+import com.jhlabs.map.proj.ProjectionFactory;
+
 import sk.maps.Layer.Tile;
 import sk.maps.Layer.TileListener;
 import android.content.Context;
@@ -28,10 +32,10 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 	
 	private MapThread mapThread;
 	
-	public MapSurface(Context context, BBox bbox, double resolutions[]) {
+	public MapSurface(Context context, BBox bbox, double resolutions[], TmsLayer layer) {
 		super(context);
 		getHolder().addCallback(this);
-		mapThread = new MapThread(getHolder(), this, bbox, resolutions);
+		mapThread = new MapThread(getHolder(), this, bbox, resolutions, layer);
 	}
 
 	@Override
@@ -48,6 +52,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		//Log.i(TAG, "somebody touched me!");
 		return mapThread.onTouchEvent(event);
 	}
 	
@@ -83,6 +88,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 		private PointF center;
 		private BBox bbox;
 		private double resolutions[];
+		private Projection proj;
 		private int zoom = -1;
 
 		private float tileWidth;
@@ -103,11 +109,12 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 		private Paint screenBorderStyle;
 		
 		
-	    public MapThread(SurfaceHolder surfaceHolder, MapSurface map, BBox bbox, double resolutions[]) {
+	    public MapThread(SurfaceHolder surfaceHolder, MapSurface map, BBox bbox, double resolutions[], TmsLayer layer) {
 	        this.surfaceHolder = surfaceHolder;
 	        this.map = map;
 	        
-	        this.bbox = bbox;
+			this.tmsLayer = layer;
+			this.bbox = bbox;
 			this.resolutions = resolutions;
 			
 			center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
@@ -128,10 +135,26 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 			buildTextTextures();
-			tmsLayer = new TmsLayer(null, null, "http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
+			//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
+			//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_gg_ortofoto_2009", "jpeg");
 			tmsLayer.addTileListener(this);
 			setZoom(1);
-	    }
+			
+			String[] params = {
+					"+proj=merc",
+					"+a=6378137",
+					"+b=6378137",
+					"+lat_ts=0.0",
+					"+lon_0=0.0",
+					"+x_0=0.0",
+					"+y_0=0",
+					"+k=1.0",
+					"+units=m",
+					"+nadgrids=@null",
+					"+no_defs"
+				};
+			proj = ProjectionFactory.fromPROJ4Specification(params);
+		}
 
 		private Bitmap textBuffer;
 		private float[] numbersWidths;
@@ -159,10 +182,11 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 				int oldZoom = this.zoom;
 				this.zoom = zoom;
 				onZoomChange(oldZoom, zoom);
+				//invalidate();
+				redraw();
 			}
 		}
 
-		
 		protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 			Log.i(TAG, format("width: %d height: %d", w, h));
 			width = w;
@@ -181,6 +205,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			}
 			*/
 			clearTiles();
+			redraw();
 		}
 
 		private void clearTiles() {
@@ -208,7 +233,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 					PointF dragPos2 = screenToMap2(event.getX(), event.getY());
 					center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
 					lastPos = dragPos2;
-					invalidate();
+					redraw();
 					if (true) break;
 					
 					PointF dragPos = screenToMap2(event.getX(), event.getY());
@@ -229,8 +254,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 					center.offset(dragStart.x - dragPos.x, dragStart.y - dragPos.y);
 					// center.offset((dragStartPx.x-event.getX())*getResolution(),
 					// (dragStartPx.y-event.getY())*getResolution());
-
-					invalidate();
+					redraw();
 					break;
 				}
 			}
@@ -238,8 +262,16 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			return true;
 		}
 
+		void redraw() {
+			//Log.i(TAG, "redraw please");
+			synchronized (obj) {
+				//Log.i(TAG, "Ok then");
+				obj.notifyAll();
+			}
+		}
 		
 		protected void onDraw(Canvas canvas) {
+			canvas.drawRGB(255, 255, 255);
 			//float scale = 1.0f; 
 			//canvas.scale(scale, scale, width / 2f, height / 2f);
 			// float cx = width/2.0f;
@@ -255,7 +287,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
 			//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
 			//canvas.drawRect(startP.x, startP.y, endP.x, endP.y, mapStyle);
-			canvas.drawRect(startP.x, endP.y, endP.x, startP.y, mapStyle);
+			canvas.drawRect(startP.x, endP.y+1, endP.x, startP.y-1, mapStyle);
 			/*
 			 * float sx = startP.x > 0? startP.x : 0; float sy = startP.y > 0?
 			 * startP.y : 0; float ex = endP.x < width? endP.x : width; float ey =
@@ -263,7 +295,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			 * mapStyle);
 			 */
 
-			canvas.drawRect(1, 1, width, height, screenBorderStyle);
+			//canvas.drawRect(1, 1, width, height, screenBorderStyle);
 			// Log.d(TAG, format("first tile [%f, %f]", startP.x, startP.y));
 			
 			PointF o = screenToMap(0, height);
@@ -281,14 +313,44 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			lastTileY = e.y < lastTileY ? e.y : lastTileY;
 			int firstTileX = s.x > 0 ? s.x : 0;
 			int firstTileY = s.y > 0 ? s.y : 0;
-			for (int i = firstTileX; i <= lastTileX; i++) {
-				for (int j = firstTileY; j <= lastTileY; j++) {
-					drawTile(canvas, i, j);
+			PointF fixedPoint = mapToScreen(bbox.minX + tileWidth * firstTileX, bbox.minY + tileHeight * firstTileY);
+			int sx = (int) fixedPoint.x;
+			int sy = (int) fixedPoint.y;
+			
+			//Log.i(TAG, format("sx=%d sy=%d firstTileX=%d firstTileY=%d", sx, sy, firstTileX, firstTileY));
+			for (int x = firstTileX; x <= lastTileX; x++) {
+				for (int y = firstTileY; y <= lastTileY; y++) {
+					String tileKey = format("%d:%d", x, y);
+					Tile tile = null;
+					if (tiles.containsKey(tileKey)) {
+						tile = tiles.get(tileKey);
+					} else {
+						tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+						tile = new Tile(x, y, null);
+						tiles.put(tileKey, tile);
+					}
+					if (tile.getImage() != null) {
+						canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy-(y-firstTileY+1)*256, null);
+					}
+					//drawTile(canvas, x, y);
 				}
 			}
 			
-			PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
+			Point2D p = new Point2D();
+			proj.transform(new Point2D(21.23886386, 49.00096926), p);
+			//Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
+			float positionOffsetX = (float) p.x-(bbox.minX + tileWidth * firstTileX);
+			float positionOffsetY = (float) p.y-(bbox.minY + tileHeight * firstTileY);
+			PointF currentPos = new PointF(sx+positionOffsetX/getResolution(), sy-positionOffsetY/getResolution());
+			
+			//PointF currentPos = mapToScreen((float) p.x, (float) p.y);
+			//PointF currentPos = mapToScreen(2367713, 6276560);
+			//bbox = 2351125 2376721
+			//Log.i(TAG, format("on screen: [%d, %d]", (int) currentPos.x, (int) currentPos.y));
+			//PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
+			//canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 			canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
+			
 			//canvas.drawBitmap(textBuffer, 0, 0, null);
 			//drawTile(canvas, 0, 0);
 		}
@@ -313,13 +375,20 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 				tiles.put(tileKey, tile);
 			}
 			
+			/* tests if there can be some rounding errors
+			PointF startP = mapToScreen(bbox.minX + (tileWidthPx*x)*getResolution(), bbox.minY + (tileHeightPx*y)*getResolution());
+			Log.i(TAG, format("x diff %f, y diff %f",
+					(((tileWidthPx*x)*getResolution())-tileWidth*x),
+					(((tileHeightPx*y)*getResolution())-tileHeight*y)
+					));
+			*/
 			PointF startP = mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
 			if (tile.getImage() != null) {
-				canvas.drawBitmap(tile.getImage(), startP.x, startP.y-256, null);
+				canvas.drawBitmap(tile.getImage(), startP.x, startP.y-256f, null);
 			}
 			if (true) return;
 			
-			canvas.drawRect(startP.x, startP.y - 256, startP.x + 256, startP.y, tileStyle);
+			canvas.drawRect(startP.x, startP.y - 256f, startP.x + 256f, startP.y, tileStyle);
 			/*
 			canvas.drawText(format("x=%d y=%d", x, y),
 				startP.x+50, startP.y+127,
@@ -395,20 +464,24 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
 			String tileKey = format("%d:%d", tile.getX(), tile.getY());
 			if (tiles.containsKey(tileKey)) {
 				tiles.put(tileKey, tile);
-				post(new Runnable() {
-					
-					@Override
-					public void run() {
-						invalidate();
-					}
-				});
+				redraw();
 			}
 		}
-		
-	    public void setRunning(boolean run) {
-	        this.run = run;
-	    }
+
+		@Override
+		public void onTileLoadingFailed(Tile tile) {
+			String tileKey = format("%d:%d", tile.getX(), tile.getY());
+			if (tiles.containsKey(tileKey)) {
+				tiles.remove(tileKey);
+			}
+		}
 	 
+		public void setRunning(boolean running) {
+			this.run = running;
+		}
+		
+		Object obj = new String();
+		
 	    @Override
 	    public void run() {
 	    	while (run) {
@@ -416,7 +489,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
                 try {
                     c = surfaceHolder.lockCanvas(null);
                     synchronized (surfaceHolder) {
-                        Log.i(TAG, "drawing");
+                        //Log.i(TAG, "drawing");
                         c.drawRGB(255, 255, 255);
                         onDraw(c);
                     }
@@ -428,15 +501,14 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback{
                         surfaceHolder.unlockCanvasAndPost(c);
                     }
                 }
+                try {
+                	synchronized (obj) {
+                		obj.wait();
+                	}
+				} catch (InterruptedException e) {
+					Log.i(TAG, e.getMessage(), e);
+				}
             }
 	    }
-
-		@Override
-		public void onTileLoadingFailed(Tile tile) {
-			String tileKey = format("%d:%d", tile.getX(), tile.getY());
-			if (tiles.containsKey(tileKey)) {
-				tiles.remove(tileKey);
-			}
-		}
 	}
 }

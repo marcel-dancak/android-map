@@ -76,7 +76,7 @@ public class Main extends Activity {
         
         TmsLayer layer = layers.get(0);
         final Map map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
-        //final MapSurface mapSurface = new MapSurface(this, bbox, resolutions);
+        //final MapSurface mapSurface = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         
         //layers.remove(0);
         

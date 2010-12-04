@@ -275,7 +275,7 @@ public class Map extends View implements TileListener {
 		
 		Point2D p = new Point2D();
 		proj.transform(new Point2D(21.23886386, 49.00096926), p);
-		Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
+		//Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
 		float positionOffsetX = (float) p.x-(bbox.minX + tileWidth * firstTileX);
 		float positionOffsetY = (float) p.y-(bbox.minY + tileHeight * firstTileY);
 		PointF currentPos = new PointF(sx+positionOffsetX/getResolution(), sy-positionOffsetY/getResolution());
@@ -283,7 +283,7 @@ public class Map extends View implements TileListener {
 		//PointF currentPos = mapToScreen((float) p.x, (float) p.y);
 		//PointF currentPos = mapToScreen(2367713, 6276560);
 		//bbox = 2351125 2376721
-		Log.i(TAG, format("on screen: [%d, %d]", (int) currentPos.x, (int) currentPos.y));
+		//Log.i(TAG, format("on screen: [%d, %d]", (int) currentPos.x, (int) currentPos.y));
 		//PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
 		//canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
