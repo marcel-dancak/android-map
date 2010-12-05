@@ -48,11 +48,12 @@ public class MapOpenGl extends GLSurfaceView implements MapView, GLSurfaceView.R
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		Log.i(TAG, "opengl init");
-		tile = new Plane(gl);
-		//gl.glEnable(GL10.GL_TEXTURE_2D);
+		gl.glEnable(GL10.GL_TEXTURE_2D);
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-		//gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+		gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 		gl.glClearColor(0.0f, 0.5f, 0.2f, 0.5f);
+		
+		tile = new Plane(gl);
 	}
 
 	@Override
@@ -77,6 +78,7 @@ public class MapOpenGl extends GLSurfaceView implements MapView, GLSurfaceView.R
 	
 	public static class Plane {
 		private IntBuffer vertexBuffer;
+		private FloatBuffer texCoordBuffer;
 		private Bitmap image;
 		private int textureId;
 		
@@ -94,6 +96,20 @@ public class MapOpenGl extends GLSurfaceView implements MapView, GLSurfaceView.R
 			vertexBuffer = vbb.asIntBuffer();
 			vertexBuffer.put(vertices);
 			vertexBuffer.position(0);
+			
+			// float size is 4
+			ByteBuffer texVbb = ByteBuffer.allocateDirect(2*4*4);
+			texVbb.order(ByteOrder.nativeOrder());
+			texCoordBuffer = texVbb.asFloatBuffer();
+			//Put the first coordinate (x,y (s,t):0,0)
+			texCoordBuffer.put(new float[] {
+					0f, 1f,
+					1f, 1f,
+					0f, 0f,
+					1f, 0f
+			});
+			texCoordBuffer.position(0);
+
 			
 			int[] textures = new int[1];
 			gl.glGenTextures(1, textures, 0);
@@ -115,9 +131,13 @@ public class MapOpenGl extends GLSurfaceView implements MapView, GLSurfaceView.R
 		
 		public void draw(GL10 gl) {
 			gl.glLoadIdentity();
-			//gl.glBindTexture(GL10.GL_TEXTURE_2D, textureId);
+			gl.glTexEnvx(GL10.GL_TEXTURE_ENV, GL10.GL_TEXTURE_ENV_MODE, GL10.GL_REPLACE);
+
+			gl.glActiveTexture(GL10.GL_TEXTURE0);
+			gl.glBindTexture(GL10.GL_TEXTURE_2D, textureId);
 			gl.glVertexPointer(3, GL10.GL_FIXED, 0, vertexBuffer);
-			gl.glColor4f(0, 0, 1, 1);
+			gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, texCoordBuffer);
+			//gl.glColor4f(0, 0, 1, 1);
 			//gl.glDrawElements(GL10.GL_TRIANGLE_STRIP, 3, GL10.GL_UNSIGNED_SHORT, vertexBuffer);
 			gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, 4);
 		}
