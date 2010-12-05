@@ -77,7 +77,7 @@ public class Main extends Activity {
         TmsLayer layer = layers.get(0);
         //final MapView map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         //final MapView map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
-        final MapView map = new MapOpenGl(this);
+        final MapView map = new MapOpenGl(this, layer);
         //layers.remove(0);
         
         Button zoomIn = new Button(this);
