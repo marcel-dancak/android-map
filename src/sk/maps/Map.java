@@ -109,7 +109,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	public void setZoom(int zoom) {
-		if (zoom > 0) {
+		if (zoom > 0 && zoom < resolutions.length) {
 			int oldZoom = this.zoom;
 			this.zoom = zoom;
 			onZoomChange(oldZoom, zoom);
