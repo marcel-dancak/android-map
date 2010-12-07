@@ -4,6 +4,8 @@ import static java.lang.String.format;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import com.jhlabs.map.proj.Projection;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
@@ -18,6 +20,13 @@ public class TmsLayer extends Layer {
 	
 	public TmsLayer(BBox bbox, double[] resolutions, String url, String name, String format) {
 		super(bbox, resolutions);
+		this.serverUrl = url;
+		this.name = name;
+		this.format = format;
+	}
+	
+	public TmsLayer(BBox bbox, double[] resolutions, String url, String name, String format, Projection projection) {
+		super(bbox, resolutions, projection);
 		this.serverUrl = url;
 		this.name = name;
 		this.format = format;

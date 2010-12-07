@@ -3,18 +3,29 @@ package sk.maps;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.jhlabs.map.proj.NullProjection;
+import com.jhlabs.map.proj.Projection;
+import com.jhlabs.map.proj.ProjectionFactory;
+
 import android.graphics.Bitmap;
 
 public abstract class Layer {
 
 	protected BBox bbox;
 	protected double[] resolutions;
+	protected Projection projection;
 	
 	private List<TileListener> tileListeners = new ArrayList<TileListener>();
 	
 	public Layer(BBox bbox, double[] resolutions) {
+		this(bbox, resolutions, new NullProjection());
+		//this(bbox, resolutions, ProjectionFactory.getNamedPROJ4CoordinateSystem("epsg:4326"));
+	}
+	
+	public Layer(BBox bbox, double[] resolutions, Projection projection) {
 		this.bbox = bbox;
 		this.resolutions = resolutions;
+		this.projection = projection;
 	}
 	
 	public final BBox getBoundingBox() {
@@ -23,6 +34,10 @@ public abstract class Layer {
 	
 	public final double[] getResolutions() {
 		return resolutions;
+	}
+	
+	public Projection getProjection() {
+		return projection;
 	}
 	
 	public void addTileListener(TileListener listener) {

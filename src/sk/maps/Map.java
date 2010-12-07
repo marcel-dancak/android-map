@@ -84,20 +84,7 @@ public class Map extends View implements TileListener, MapView {
 		tmsLayer.addTileListener(this);
 		setZoom(1);
 		
-		String[] params = {
-				"+proj=merc",
-				"+a=6378137",
-				"+b=6378137",
-				"+lat_ts=0.0",
-				"+lon_0=0.0",
-				"+x_0=0.0",
-				"+y_0=0",
-				"+k=1.0",
-				"+units=m",
-				"+nadgrids=@null",
-				"+no_defs"
-			};
-		proj = ProjectionFactory.fromPROJ4Specification(params);
+		proj = layer.getProjection();
 	}
 
 	private Bitmap textBuffer;
@@ -168,11 +155,13 @@ public class Map extends View implements TileListener, MapView {
 			int action = event.getAction() & MotionEvent.ACTION_MASK;
 			switch (action) {
 			case MotionEvent.ACTION_DOWN:
+				/*
 				Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
 						tiles.size(),
 						Runtime.getRuntime().freeMemory()/1024,
 						Runtime.getRuntime().totalMemory()/1024,
 						Runtime.getRuntime().maxMemory()/1024));
+				*/
 				centerAtDragStart = new PointF(center.x, center.y);
 				dragStart = screenToMap(event.getX(), event.getY());
 				dragStartPx = new PointF(event.getX(), event.getY());

@@ -10,6 +10,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import com.jhlabs.map.proj.Projection;
+import com.jhlabs.map.proj.ProjectionFactory;
+
 import sk.utils.Utils;
 
 import android.app.Activity;
@@ -60,7 +63,8 @@ public class Main extends Activity {
 						(float) bboxArray.getDouble(2),
 						(float) bboxArray.getDouble(3));
 				
-				layers.add(new TmsLayer(bbox, resolutions, url, layerName, extension));
+				Projection proj = ProjectionFactory.getNamedPROJ4CoordinateSystem(srs);
+				layers.add(new TmsLayer(bbox, resolutions, url, layerName, extension, proj));
 				
 				Log.i(TAG, "Title: "+title);
 				Log.i(TAG, "URL: "+url);
@@ -75,8 +79,8 @@ public class Main extends Activity {
 		}
         
         TmsLayer layer = layers.get(0);
-        //final MapView map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
-        final MapView map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        final MapView map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        //final MapView map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         
         //layers.remove(0);
         
