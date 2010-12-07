@@ -326,7 +326,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 						tile = tiles.get(tileKey);
 					} else {
 						tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
-						tile = new Tile(x, y, null);
+						tile = new Tile(x, y, zoom, null);
 						tiles.put(tileKey, tile);
 					}
 					if (tile.getImage() != null) {
@@ -371,7 +371,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 				tile = tiles.get(tileKey);
 			} else {
 				tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
-				tile = new Tile(x, y, null);
+				tile = new Tile(x, y, zoom, null);
 				tiles.put(tileKey, tile);
 			}
 			
@@ -461,11 +461,30 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 
 		@Override
 		public void onTileLoad(Tile tile) {
-			String tileKey = format("%d:%d", tile.getX(), tile.getY());
-			if (tiles.containsKey(tileKey)) {
-				tiles.put(tileKey, tile);
-				redraw();
+			// throw away tiles with not actual zoom level (delayed)
+			if (tile.getZoomLevel() != zoom) {
+				tile.recycle();
+				return;
 			}
+			String tileKey = format("%d:%d", tile.getX(), tile.getY());
+			synchronized (tiles) {
+				if (tiles.size() > 35) {
+					Point centerTile = getTileAtScreen(width/2, height/2);
+					while (tiles.size() > 35) {
+						Tile mostFarAway = tiles.values().iterator().next();
+						for (Tile t : tiles.values()) {
+							if (Math.abs(centerTile.x-t.getX())+Math.abs(centerTile.y-t.getY()) >
+									Math.abs(centerTile.x-mostFarAway.getX())+Math.abs(centerTile.y-mostFarAway.getY())) {
+								mostFarAway = t;
+							}
+						}
+						mostFarAway.recycle();
+						tiles.remove(format("%d:%d", mostFarAway.getX(), mostFarAway.getY()));
+					}
+				}
+				tiles.put(tileKey, tile);
+			}
+			redraw();
 		}
 
 		@Override

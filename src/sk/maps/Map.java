@@ -155,13 +155,13 @@ public class Map extends View implements TileListener, MapView {
 			int action = event.getAction() & MotionEvent.ACTION_MASK;
 			switch (action) {
 			case MotionEvent.ACTION_DOWN:
-				/*
+				
 				Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
 						tiles.size(),
 						Runtime.getRuntime().freeMemory()/1024,
 						Runtime.getRuntime().totalMemory()/1024,
 						Runtime.getRuntime().maxMemory()/1024));
-				*/
+				
 				centerAtDragStart = new PointF(center.x, center.y);
 				dragStart = screenToMap(event.getX(), event.getY());
 				dragStartPx = new PointF(event.getX(), event.getY());
@@ -262,7 +262,7 @@ public class Map extends View implements TileListener, MapView {
 					tile = tiles.get(tileKey);
 				} else {
 					tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
-					tile = new Tile(x, y, null);
+					tile = new Tile(x, y, zoom, null);
 					tiles.put(tileKey, tile);
 				}
 				if (tile.getImage() != null) {
@@ -307,7 +307,7 @@ public class Map extends View implements TileListener, MapView {
 			tile = tiles.get(tileKey);
 		} else {
 			tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
-			tile = new Tile(x, y, null);
+			tile = new Tile(x, y, zoom, null);
 			tiles.put(tileKey, tile);
 		}
 		
@@ -397,21 +397,29 @@ public class Map extends View implements TileListener, MapView {
 
 	@Override
 	public void onTileLoad(Tile tile) {
-		String tileKey = format("%d:%d", tile.getX(), tile.getY());
-		if (tiles.size() > 40) {
-			Point centerTile = getTileAtScreen(width/2, height/2);
-			while (tiles.size() > 40) {
-				Tile mostFarAway = tiles.values().iterator().next();
-				for (Tile t : tiles.values()) {
-					if (Math.abs(centerTile.x-t.getX())+Math.abs(centerTile.y-t.getY()) >
-							Math.abs(centerTile.x-mostFarAway.getX())+Math.abs(centerTile.y-mostFarAway.getY())) {
-						mostFarAway = t;
-					}
-				}
-				tiles.remove(format("%d:%d", mostFarAway.getX(), mostFarAway.getY()));
-			}
+		// throw away tiles with not actual zoom level (delayed)
+		if (tile.getZoomLevel() != zoom) {
+			tile.recycle();
+			return;
 		}
-		tiles.put(tileKey, tile);
+		String tileKey = format("%d:%d", tile.getX(), tile.getY());
+		synchronized (tiles) {
+			if (tiles.size() > 35) {
+				Point centerTile = getTileAtScreen(width/2, height/2);
+				while (tiles.size() > 35) {
+					Tile mostFarAway = tiles.values().iterator().next();
+					for (Tile t : tiles.values()) {
+						if (Math.abs(centerTile.x-t.getX())+Math.abs(centerTile.y-t.getY()) >
+								Math.abs(centerTile.x-mostFarAway.getX())+Math.abs(centerTile.y-mostFarAway.getY())) {
+							mostFarAway = t;
+						}
+					}
+					mostFarAway.recycle();
+					tiles.remove(format("%d:%d", mostFarAway.getX(), mostFarAway.getY()));
+				}
+			}
+			tiles.put(tileKey, tile);
+		}
 		post(new Runnable() {
 			
 			@Override

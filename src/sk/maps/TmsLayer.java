@@ -48,14 +48,14 @@ public class TmsLayer extends Layer {
 					//imageStream.close();
 					if (image != null) {
 						//Log.i(TAG, format("Get image %d x %d", image.getWidth(), image.getHeight()));
-						fireTileLoad(new Tile(x, y, image));
+						fireTileLoad(new Tile(x, y, zoom, image));
 						return;
 					}
 				} catch (Exception e) {
 					Log.e(TAG, "what!", e);
 					e.printStackTrace();
 				}
-				fireTileLoadingFailed(new Tile(x, y, null));
+				fireTileLoadingFailed(new Tile(x, y, zoom, null));
 			}
 		};
 		t.start();

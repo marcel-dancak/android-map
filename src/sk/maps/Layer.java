@@ -59,11 +59,13 @@ public abstract class Layer {
 	public static class Tile {
 		private int x;
 		private int y;
+		private int zoomLevel;
 		private Bitmap image;
 		
-		public Tile(int x, int y, Bitmap image) {
+		public Tile(int x, int y, int zoomLevel, Bitmap image) {
 			this.x = x;
 			this.y = y;
+			this.zoomLevel = zoomLevel;
 			this.image = image;
 		}
 		
@@ -75,8 +77,19 @@ public abstract class Layer {
 			return y;
 		}
 		
+		public int getZoomLevel() {
+			return zoomLevel;
+		}
+		
 		public Bitmap getImage() {
 			return image;
+		}
+		
+		public void recycle() {
+			if (image != null) {
+				image.recycle();
+				image = null;
+			}
 		}
 	}
 	
