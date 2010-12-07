@@ -161,23 +161,33 @@ public class Map extends View implements TileListener, MapView {
 	private PointF lastPos;
 	private PointF dragStartPx;
 
+	private boolean filterEvent;
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (event.getPointerCount() == 1) {
 			int action = event.getAction() & MotionEvent.ACTION_MASK;
 			switch (action) {
 			case MotionEvent.ACTION_DOWN:
+				Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
+						tiles.size(),
+						Runtime.getRuntime().freeMemory()/1024,
+						Runtime.getRuntime().totalMemory()/1024,
+						Runtime.getRuntime().maxMemory()/1024));
 				centerAtDragStart = new PointF(center.x, center.y);
 				dragStart = screenToMap(event.getX(), event.getY());
 				dragStartPx = new PointF(event.getX(), event.getY());
 				lastPos = screenToMap(event.getX(), event.getY());
 				break;
 			case MotionEvent.ACTION_MOVE:
-				PointF dragPos2 = screenToMap2(event.getX(), event.getY());
-				center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
-				lastPos = dragPos2;
-				invalidate();
-				if (true) break;
+				filterEvent = !filterEvent;
+				if (filterEvent) {
+					break;
+				}
+//				PointF dragPos2 = screenToMap2(event.getX(), event.getY());
+//				center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
+//				lastPos = dragPos2;
+//				invalidate();
+//				if (true) break;
 				
 				PointF dragPos = screenToMap2(event.getX(), event.getY());
 				// Log.i(TAG, format("Start [%f, %f] currnet [%f, %f]",
@@ -399,16 +409,27 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void onTileLoad(Tile tile) {
 		String tileKey = format("%d:%d", tile.getX(), tile.getY());
-		if (tiles.containsKey(tileKey)) {
-			tiles.put(tileKey, tile);
-			post(new Runnable() {
-				
-				@Override
-				public void run() {
-					invalidate();
+		if (tiles.size() > 40) {
+			Point centerTile = getTileAtScreen(width/2, height/2);
+			while (tiles.size() > 40) {
+				Tile mostFarAway = tiles.values().iterator().next();
+				for (Tile t : tiles.values()) {
+					if (Math.abs(centerTile.x-t.getX())+Math.abs(centerTile.y-t.getY()) >
+							Math.abs(centerTile.x-mostFarAway.getX())+Math.abs(centerTile.y-mostFarAway.getY())) {
+						mostFarAway = t;
+					}
 				}
-			});
+				tiles.remove(format("%d:%d", mostFarAway.getX(), mostFarAway.getY()));
+			}
 		}
+		tiles.put(tileKey, tile);
+		post(new Runnable() {
+			
+			@Override
+			public void run() {
+				invalidate();
+			}
+		});
 	}
 
 	@Override
