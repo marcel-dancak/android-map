@@ -3,6 +3,8 @@ package sk.maps;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.jhlabs.geom.Point2D;
 import com.jhlabs.map.proj.Projection;
@@ -53,7 +55,8 @@ public class Map extends View implements TileListener, MapView {
 	private Paint mapStyle;
 	private Paint tileStyle;
 	private Paint screenBorderStyle;
-
+	private Timer animTimer = new Timer();
+	
 	public Map(Context context, BBox bbox, double resolutions[], TmsLayer layer) {
 		super(context);
 		//this.layers = Collections.unmodifiableList(layers);
@@ -166,12 +169,31 @@ public class Map extends View implements TileListener, MapView {
 				dragStart = screenToMap(event.getX(), event.getY());
 				dragStartPx = new PointF(event.getX(), event.getY());
 				lastPos = screenToMap(event.getX(), event.getY());
+				animTimer.schedule(new TimerTask() {
+					
+					@Override
+					public void run() {
+						post(new Runnable() {
+							
+							@Override
+							public void run() {
+								invalidate();
+							}
+						});
+					}
+				}, 30, 80);
+				break;
+			case MotionEvent.ACTION_UP:
+				animTimer.cancel();
+				animTimer = new Timer();
 				break;
 			case MotionEvent.ACTION_MOVE:
+				/*
 				filterEvent = !filterEvent;
 				if (filterEvent) {
 					break;
 				}
+				*/
 //				PointF dragPos2 = screenToMap2(event.getX(), event.getY());
 //				center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
 //				lastPos = dragPos2;
@@ -197,7 +219,7 @@ public class Map extends View implements TileListener, MapView {
 				// center.offset((dragStartPx.x-event.getX())*getResolution(),
 				// (dragStartPx.y-event.getY())*getResolution());
 
-				invalidate();
+				//invalidate();
 				break;
 			}
 		}
@@ -271,21 +293,21 @@ public class Map extends View implements TileListener, MapView {
 				//drawTile(canvas, x, y);
 			}
 		}
-		
+		/*
 		Point2D p = new Point2D();
 		proj.transform(new Point2D(21.23886386, 49.00096926), p);
 		//Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
 		float positionOffsetX = (float) p.x-(bbox.minX + tileWidth * firstTileX);
 		float positionOffsetY = (float) p.y-(bbox.minY + tileHeight * firstTileY);
 		PointF currentPos = new PointF(sx+positionOffsetX/getResolution(), sy-positionOffsetY/getResolution());
-		
+		*/
 		//PointF currentPos = mapToScreen((float) p.x, (float) p.y);
 		//PointF currentPos = mapToScreen(2367713, 6276560);
 		//bbox = 2351125 2376721
 		//Log.i(TAG, format("on screen: [%d, %d]", (int) currentPos.x, (int) currentPos.y));
 		//PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
 		//canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
-		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
+		//canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		
 		//canvas.drawBitmap(textBuffer, 0, 0, null);
 		//drawTile(canvas, 0, 0);
