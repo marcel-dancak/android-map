@@ -158,13 +158,13 @@ public class Map extends View implements TileListener, MapView {
 			int action = event.getAction() & MotionEvent.ACTION_MASK;
 			switch (action) {
 			case MotionEvent.ACTION_DOWN:
-				
+				/*
 				Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
 						tiles.size(),
 						Runtime.getRuntime().freeMemory()/1024,
 						Runtime.getRuntime().totalMemory()/1024,
 						Runtime.getRuntime().maxMemory()/1024));
-				
+				*/
 				centerAtDragStart = new PointF(center.x, center.y);
 				dragStart = screenToMap(event.getX(), event.getY());
 				dragStartPx = new PointF(event.getX(), event.getY());
@@ -181,7 +181,8 @@ public class Map extends View implements TileListener, MapView {
 							}
 						});
 					}
-				}, 30, 80);
+				}, 30, 40);
+				
 				break;
 			case MotionEvent.ACTION_UP:
 				animTimer.cancel();
@@ -275,17 +276,18 @@ public class Map extends View implements TileListener, MapView {
 		int sx = (int) fixedPoint.x;
 		int sy = (int) fixedPoint.y;
 		
+		long t1 = System.currentTimeMillis();
 		//Log.i(TAG, format("sx=%d sy=%d firstTileX=%d firstTileY=%d", sx, sy, firstTileX, firstTileY));
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
-				String tileKey = format("%d:%d", x, y);
+				String tileKey = tileKey(x, y);
 				Tile tile = null;
 				if (tiles.containsKey(tileKey)) {
 					tile = tiles.get(tileKey);
 				} else {
-					tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+					//tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
 					tile = new Tile(x, y, zoom, null);
-					tiles.put(tileKey, tile);
+					//tiles.put(tileKey, tile);
 				}
 				if (tile.getImage() != null) {
 					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy-(y-firstTileY+1)*256, null);
@@ -293,6 +295,21 @@ public class Map extends View implements TileListener, MapView {
 				//drawTile(canvas, x, y);
 			}
 		}
+		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
+		t1 = System.currentTimeMillis();
+		for (int x = firstTileX; x <= lastTileX; x++) {
+			for (int y = firstTileY; y <= lastTileY; y++) {
+				String tileKey = tileKey(x, y);
+				if (!tiles.containsKey(tileKey)) {
+					//tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+					Tile tile = new Tile(x, y, zoom, null);
+					//System.out.println("need a tile");
+					tmsLayer.requestTile2(tile);
+					tiles.put(tileKey, tile);
+				}
+			}
+		}
+		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		/*
 		Point2D p = new Point2D();
 		proj.transform(new Point2D(21.23886386, 49.00096926), p);
@@ -457,5 +474,9 @@ public class Map extends View implements TileListener, MapView {
 		if (tiles.containsKey(tileKey)) {
 			tiles.remove(tileKey);
 		}
+	}
+	
+	private static final String tileKey(int x, int y) {
+		return x+":"+y;
 	}
 }

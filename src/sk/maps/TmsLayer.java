@@ -8,6 +8,7 @@ import com.jhlabs.map.proj.Projection;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.util.Log;
 
 public class TmsLayer extends Layer {
@@ -59,5 +60,48 @@ public class TmsLayer extends Layer {
 			}
 		};
 		t.start();
+	}
+	
+	public void requestTile2(Tile tile) {
+		Downloader asyncDownloader = new Downloader();
+		asyncDownloader.layer = this;
+		asyncDownloader.execute(tile);
+	}
+	
+	private static class Downloader extends AsyncTask<Tile, Integer, Tile> {
+		
+		TmsLayer layer;
+		
+		@Override
+		protected Tile doInBackground(Tile... params) {
+			Tile tile = params[0]; 
+			URL url;
+			Bitmap image = null;
+			try {
+				String query = format("/1.0.0/%s/%d/%d/%d.%s", layer.name, tile.getZoomLevel()-1, tile.getX(), tile.getY(), layer.format);
+				url = new URL(layer.serverUrl+"/"+query);
+				//Log.i(TAG, url.toString());
+				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+				//Log.i(TAG, "Content Type: "+httpCon.getContentType());
+				//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
+				
+				image = BitmapFactory.decodeStream(httpCon.getInputStream());
+				//imageStream.close();
+
+			} catch (Exception e) {
+				Log.e(TAG, "what!", e);
+				e.printStackTrace();
+			}
+			return new Tile(tile.getX(), tile.getY(), tile.getZoomLevel(), image);
+		}
+
+		@Override
+		protected void onPostExecute(Tile result) {
+			if (result.getImage() != null) {
+				layer.fireTileLoad(result);
+			} else {
+				layer.fireTileLoadingFailed(result);
+			}
+		}
 	}
 }
