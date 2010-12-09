@@ -87,7 +87,7 @@ public class Main extends Activity implements SensorEventListener {
 		}
         
         TmsLayer layer = layers.get(0);
-        map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        map = new Map(this, layer);
         //map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         
         //layers.remove(0);
@@ -133,7 +133,7 @@ public class Main extends Activity implements SensorEventListener {
 	public void onSensorChanged(SensorEvent event) {
 		int heading = (int) event.values[0];
 		//Log.i(TAG, "heading:" +heading);
-		map.setHeading(-heading);
+		//map.setHeading(-heading);
 	}
 
 	@Override

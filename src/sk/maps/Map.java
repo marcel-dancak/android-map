@@ -1,15 +1,8 @@
 package sk.maps;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import com.jhlabs.geom.Point2D;
-import com.jhlabs.map.proj.Projection;
-import com.jhlabs.map.proj.ProjectionFactory;
-
 import static java.lang.String.format;
 
 import android.content.Context;
@@ -25,6 +18,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.jhlabs.geom.Point2D;
+
 import sk.maps.Layer.Tile;
 import sk.maps.Layer.TileListener;
 import sk.utils.Utils;
@@ -35,15 +30,11 @@ public class Map extends View implements TileListener, MapView {
 
 	private PointF center;
 	private BBox bbox;
-	private double resolutions[];
-	private Projection proj;
 	private int zoom = -1;
 	private int heading;
 	
 	private float tileWidth;
 	private float tileHeight;
-	private int tileWidthPx = 256;
-	private int tileHeightPx = 256;
 
 	// size of map in pixels
 	private int width;
@@ -53,18 +44,19 @@ public class Map extends View implements TileListener, MapView {
 	private TmsLayer tmsLayer;
 	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
 	
+	// drawing styles
 	private Paint imagesStyle;
 	private Paint mapStyle;
 	private Paint tileStyle;
 	private Paint screenBorderStyle;
+	
 	private Timer animTimer = new Timer();
 	
-	public Map(Context context, BBox bbox, double resolutions[], TmsLayer layer) {
+	public Map(Context context, TmsLayer layer) {
 		super(context);
 		//this.layers = Collections.unmodifiableList(layers);
 		this.tmsLayer = layer;
-		this.bbox = bbox;
-		this.resolutions = resolutions;
+		this.bbox = layer.getBoundingBox();
 		
 		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
 
@@ -87,12 +79,8 @@ public class Map extends View implements TileListener, MapView {
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 		buildTextTextures();
-		//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
-		//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_gg_ortofoto_2009", "jpeg");
 		tmsLayer.addTileListener(this);
 		setZoom(1);
-		
-		proj = layer.getProjection();
 	}
 
 	private Bitmap textBuffer;
@@ -117,7 +105,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	public void setZoom(int zoom) {
-		if (zoom > 0 && zoom < resolutions.length) {
+		if (zoom > 0 && zoom < tmsLayer.getResolutions().length) {
 			int oldZoom = this.zoom;
 			this.zoom = zoom;
 			onZoomChange(oldZoom, zoom);
@@ -134,15 +122,8 @@ public class Map extends View implements TileListener, MapView {
 	}
 
 	protected void onZoomChange(int oldZoom, int zoom) {
-		tileWidth = tileWidthPx * getResolution();
-		tileHeight = tileHeightPx * getResolution();
-		/*
-		RectF tileBbox = new RectF(bbox.minX, bbox.minY, bbox.minX+256*getResolution(), bbox.minY+256*getResolution());
-		Bitmap tile = new WmsLayer().requestTile(tileBbox, 256, 256);
-		if (tile != null) {
-			tiles.add(tile);
-		}
-		*/
+		tileWidth = tmsLayer.getTileWidth() * getResolution();
+		tileHeight = tmsLayer.getTileHeight() * getResolution();
 		clearTiles();
 	}
 
@@ -318,7 +299,7 @@ public class Map extends View implements TileListener, MapView {
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
 		Point2D p = new Point2D();
-		proj.transform(new Point2D(21.23886386, 49.00096926), p);
+		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p);
 		//Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
 		float positionOffsetX = (float) p.x-(bbox.minX + tileWidth * firstTileX);
 		float positionOffsetY = (float) p.y-(bbox.minY + tileHeight * firstTileY);
@@ -350,7 +331,7 @@ public class Map extends View implements TileListener, MapView {
 		if (tiles.containsKey(tileKey)) {
 			tile = tiles.get(tileKey);
 		} else {
-			tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+			tmsLayer.requestTile(zoom, x, y);
 			tile = new Tile(x, y, zoom, null);
 			tiles.put(tileKey, tile);
 		}
@@ -435,8 +416,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 
 	private float getResolution() {
-		//return 1.125f / zoom;
-		return (float) resolutions[zoom-1];
+		return (float) tmsLayer.getResolutions()[zoom-1];
 	}
 
 	@Override

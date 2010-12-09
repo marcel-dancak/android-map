@@ -19,6 +19,10 @@ public class TmsLayer extends Layer {
 	private String name;
 	private String format;
 	
+	// tile size in pixels
+	private int tileWidth = 256;
+	private int tileHeight = 256;
+	
 	public TmsLayer(BBox bbox, double[] resolutions, String url, String name, String format) {
 		super(bbox, resolutions);
 		this.serverUrl = url;
@@ -33,7 +37,15 @@ public class TmsLayer extends Layer {
 		this.format = format;
 	}
 	
-	public void requestTile(final int zoom, final int x, final int y, int width, int height) {
+	public int getTileWidth() {
+		return tileWidth;
+	}
+	
+	public int getTileHeight() {
+		return tileHeight;
+	}
+	
+	public void requestTile(final int zoom, final int x, final int y) {
 		Thread t = new Thread() {
 			public void run() {
 				URL url;
