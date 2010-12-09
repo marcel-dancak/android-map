@@ -56,7 +56,7 @@ public class TmsVisualDebugger {
 		float tileHeight = layer.getTileHeight() * map.getResolution();
 		
 		PointF startP = map.mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
-		canvas.drawRect(startP.x, startP.y - 256f, startP.x + 256f, startP.y, tileStyle);
+		canvas.drawRect(startP.x, startP.y, startP.x+256f, startP.y+256, tileStyle);
 		/*
 		canvas.drawText(format("x=%d y=%d", x, y),
 			startP.x+50, startP.y+127,
@@ -65,7 +65,7 @@ public class TmsVisualDebugger {
 		*/
 		
 		int xPos = (int) startP.x+50;
-		int yPos = (int) startP.y-127;
+		int yPos = (int) startP.y+127;
 		
 		// draw "x="
 		canvas.drawBitmap(textBuffer,

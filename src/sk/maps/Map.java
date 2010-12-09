@@ -8,6 +8,7 @@ import static java.lang.String.format;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -199,30 +200,21 @@ public class Map extends View implements TileListener, MapView {
 	protected void onDraw(Canvas canvas) {
 		canvas.drawRGB(255, 255, 255);
 		canvas.rotate(heading, width/2f, height/2f);
-		//float scale = 1.0f; 
+		
+		//canvas.scale(1, -1, width / 2f, height / 2f);
+		canvas.scale(1, -1);
+		canvas.translate(0, -height);
+		float scale = 0.5f; 
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
-		// float cx = width/2.0f;
-		// float cy = height/2.0f;
-		// Log.d(TAG, format("center [%f, %f]", cx, cy));
-		// Log.d(TAG, format("[0,0] ==> [%f, %f]", center.x-cx*getResolution(),
-		// center.y-cy*getResolution()));
-		/*
-		 * for (Layer layer : layers) { layer.drawTile(canvas); }
-		 */
+		
+		canvas.drawLine(0, 0, 20, 10, screenBorderStyle);
 
 		PointF startP = mapToScreen(bbox.minX, bbox.minY);
 		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
-		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
-		//canvas.drawRect(startP.x, startP.y, endP.x, endP.y, mapStyle);
-		canvas.drawRect(startP.x, endP.y+1, endP.x, startP.y-1, mapStyle);
-		/*
-		 * float sx = startP.x > 0? startP.x : 0; float sy = startP.y > 0?
-		 * startP.y : 0; float ex = endP.x < width? endP.x : width; float ey =
-		 * endP.y < height? endP.y : height; canvas.drawRect(sx, sy, ex, ey,
-		 * mapStyle);
-		 */
+		canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
+		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 
-		//canvas.drawRect(1, 1, width, height, screenBorderStyle);
+		//canvas.drawRect(startP.x, startP.y, startP.x+256, startP.y+256, screenBorderStyle);
 		// Log.d(TAG, format("first tile [%f, %f]", startP.x, startP.y));
 		
 		PointF o = screenToMap(0, height);
@@ -258,8 +250,12 @@ public class Map extends View implements TileListener, MapView {
 					//tiles.put(tileKey, tile);
 				}
 				if (tile.getImage() != null) {
-					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy-(y-firstTileY+1)*256, imagesStyle);
+					Matrix m = canvas.getMatrix();
+					canvas.scale(1, -1, sx + (256*(x-firstTileX))+128, sy+(y-firstTileY)*256+128);
+					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy+(y-firstTileY)*256, imagesStyle);
 					visualDebugger.drawTile(canvas, x, y);
+					//canvas.scale(1, -1, 128, 128);
+					canvas.setMatrix(m);
 				}
 				//drawTile(canvas, x, y);
 			}
@@ -285,7 +281,7 @@ public class Map extends View implements TileListener, MapView {
 		//Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
 		float positionOffsetX = (float) p.x-(bbox.minX + tileWidth * firstTileX);
 		float positionOffsetY = (float) p.y-(bbox.minY + tileHeight * firstTileY);
-		PointF currentPos = new PointF(sx+positionOffsetX/getResolution(), sy-positionOffsetY/getResolution());
+		PointF currentPos = new PointF(sx+positionOffsetX/getResolution(), sy+positionOffsetY/getResolution());
 		
 		//PointF currentPos = mapToScreen((float) p.x, (float) p.y);
 		//PointF currentPos = mapToScreen(2367713, 6276560);
@@ -294,8 +290,7 @@ public class Map extends View implements TileListener, MapView {
 		//PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		
-		//canvas.drawBitmap(textBuffer, 0, 0, null);
-		//drawTile(canvas, 0, 0);
+		canvas.drawRect(0, 0, width, height, screenBorderStyle);
 	}
 
 	private Point getTileAtScreen(int x, int y) {
@@ -323,7 +318,7 @@ public class Map extends View implements TileListener, MapView {
 
 	public final PointF mapToScreen(float x, float y) {
 		float offsetX = x - center.x;
-		float offsetY = center.y - y;
+		float offsetY = y - center.y;
 		return new PointF(width / 2f + offsetX / getResolution(), height / 2f + offsetY
 				/ getResolution());
 	}
