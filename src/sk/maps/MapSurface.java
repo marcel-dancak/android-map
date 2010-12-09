@@ -530,4 +530,10 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
             }
 	    }
 	}
+
+	@Override
+	public void setHeading(int heading) {
+		// TODO Auto-generated method stub
+		
+	}
 }

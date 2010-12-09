@@ -16,6 +16,11 @@ import com.jhlabs.map.proj.ProjectionFactory;
 import sk.utils.Utils;
 
 import android.app.Activity;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -25,8 +30,11 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-public class Main extends Activity {
+public class Main extends Activity implements SensorEventListener {
 	private static final String TAG = Main.class.getName();
+	
+	private SensorManager sensorManager;
+	private MapView map;
 	
     /** Called when the activity is first created. */
     @Override
@@ -79,8 +87,8 @@ public class Main extends Activity {
 		}
         
         TmsLayer layer = layers.get(0);
-        final MapView map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
-        //final MapView map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        map = new Map(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        //map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         
         //layers.remove(0);
         
@@ -116,5 +124,20 @@ public class Main extends Activity {
         layout.addView(zoomControls);
         setContentView(layout);
         //setContentView(map);
+        
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_UI);
     }
+
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		int heading = (int) event.values[0];
+		//Log.i(TAG, "heading:" +heading);
+		map.setHeading(-heading);
+	}
+
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+		
+	}
 }

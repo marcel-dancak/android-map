@@ -38,7 +38,8 @@ public class Map extends View implements TileListener, MapView {
 	private double resolutions[];
 	private Projection proj;
 	private int zoom = -1;
-
+	private int heading;
+	
 	private float tileWidth;
 	private float tileHeight;
 	private int tileWidthPx = 256;
@@ -52,6 +53,7 @@ public class Map extends View implements TileListener, MapView {
 	private TmsLayer tmsLayer;
 	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
 	
+	private Paint imagesStyle;
 	private Paint mapStyle;
 	private Paint tileStyle;
 	private Paint screenBorderStyle;
@@ -66,9 +68,12 @@ public class Map extends View implements TileListener, MapView {
 		
 		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
 
+		imagesStyle = new Paint();
+		imagesStyle.setFilterBitmap(true);
+		
 		mapStyle = new Paint();
 		mapStyle.setColor(Color.argb(127, 127, 20, 20));
-
+		
 		tileStyle = new Paint();
 		tileStyle.setColor(Color.LTGRAY);
 		tileStyle.setStyle(Paint.Style.STROKE);
@@ -231,6 +236,7 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		canvas.drawRGB(255, 255, 255);
+		canvas.rotate(heading, width/2f, height/2f);
 		//float scale = 1.0f; 
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		// float cx = width/2.0f;
@@ -290,7 +296,7 @@ public class Map extends View implements TileListener, MapView {
 					//tiles.put(tileKey, tile);
 				}
 				if (tile.getImage() != null) {
-					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy-(y-firstTileY+1)*256, null);
+					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy-(y-firstTileY+1)*256, imagesStyle);
 				}
 				//drawTile(canvas, x, y);
 			}
@@ -310,21 +316,20 @@ public class Map extends View implements TileListener, MapView {
 			}
 		}
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
-		/*
+		
 		Point2D p = new Point2D();
 		proj.transform(new Point2D(21.23886386, 49.00096926), p);
 		//Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
 		float positionOffsetX = (float) p.x-(bbox.minX + tileWidth * firstTileX);
 		float positionOffsetY = (float) p.y-(bbox.minY + tileHeight * firstTileY);
 		PointF currentPos = new PointF(sx+positionOffsetX/getResolution(), sy-positionOffsetY/getResolution());
-		*/
+		
 		//PointF currentPos = mapToScreen((float) p.x, (float) p.y);
 		//PointF currentPos = mapToScreen(2367713, 6276560);
 		//bbox = 2351125 2376721
 		//Log.i(TAG, format("on screen: [%d, %d]", (int) currentPos.x, (int) currentPos.y));
 		//PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
-		//canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
-		//canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
+		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		
 		//canvas.drawBitmap(textBuffer, 0, 0, null);
 		//drawTile(canvas, 0, 0);
@@ -478,5 +483,11 @@ public class Map extends View implements TileListener, MapView {
 	
 	private static final String tileKey(int x, int y) {
 		return x+":"+y;
+	}
+
+	@Override
+	public void setHeading(int heading) {
+		this.heading = heading;
+		invalidate();
 	}
 }
