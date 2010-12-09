@@ -6,13 +6,11 @@ import java.util.TimerTask;
 import static java.lang.String.format;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -22,6 +20,7 @@ import com.jhlabs.geom.Point2D;
 
 import sk.maps.Layer.Tile;
 import sk.maps.Layer.TileListener;
+import sk.utils.TmsVisualDebugger;
 import sk.utils.Utils;
 
 public class Map extends View implements TileListener, MapView {
@@ -47,10 +46,10 @@ public class Map extends View implements TileListener, MapView {
 	// drawing styles
 	private Paint imagesStyle;
 	private Paint mapStyle;
-	private Paint tileStyle;
 	private Paint screenBorderStyle;
 	
 	private Timer animTimer = new Timer();
+	private TmsVisualDebugger visualDebugger;
 	
 	public Map(Context context, TmsLayer layer) {
 		super(context);
@@ -65,12 +64,6 @@ public class Map extends View implements TileListener, MapView {
 		
 		mapStyle = new Paint();
 		mapStyle.setColor(Color.argb(127, 127, 20, 20));
-		
-		tileStyle = new Paint();
-		tileStyle.setColor(Color.LTGRAY);
-		tileStyle.setStyle(Paint.Style.STROKE);
-		tileStyle.setTextSize(30);
-		tileStyle.setAntiAlias(true);
 
 		screenBorderStyle = new Paint();
 		screenBorderStyle.setStyle(Paint.Style.STROKE);
@@ -78,26 +71,10 @@ public class Map extends View implements TileListener, MapView {
 		screenBorderStyle.setAntiAlias(true);
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
-		buildTextTextures();
 		tmsLayer.addTileListener(this);
 		setZoom(1);
-	}
-
-	private Bitmap textBuffer;
-	private float[] numbersWidths;
-
-	private void buildTextTextures() {
-		textBuffer = Bitmap.createBitmap(25, 400, Bitmap.Config.ARGB_8888);
-		Canvas canvas = new Canvas(textBuffer);
-		// FontMetrics fm = new FontMetrics();
-
-		numbersWidths = new float[10];
-		tileStyle.getTextWidths("0123456789", numbersWidths);
-		for (int i = 0; i < 10; i++) {
-			canvas.drawText("" + i, 0, (i+1) * 30, tileStyle);
-		}
-		canvas.drawText("x=", 0, 340, tileStyle);
-		canvas.drawText("y=", 0, 370, tileStyle);
+		
+		visualDebugger = new TmsVisualDebugger(this);
 	}
 
 	public int getZoom() {
@@ -127,6 +104,10 @@ public class Map extends View implements TileListener, MapView {
 		clearTiles();
 	}
 
+	public TmsLayer getLayer() {
+		return tmsLayer;
+	}
+	
 	private void clearTiles() {
 		tiles.clear();
 	}
@@ -278,6 +259,7 @@ public class Map extends View implements TileListener, MapView {
 				}
 				if (tile.getImage() != null) {
 					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy-(y-firstTileY+1)*256, imagesStyle);
+					visualDebugger.drawTile(canvas, x, y);
 				}
 				//drawTile(canvas, x, y);
 			}
@@ -325,75 +307,6 @@ public class Map extends View implements TileListener, MapView {
 		return new Point((int) Math.floor(tileX), (int) Math.floor(tileY));
 	}
 
-	private void drawTile(Canvas canvas, int x, int y) {
-		String tileKey = format("%d:%d", x, y);
-		Tile tile = null;
-		if (tiles.containsKey(tileKey)) {
-			tile = tiles.get(tileKey);
-		} else {
-			tmsLayer.requestTile(zoom, x, y);
-			tile = new Tile(x, y, zoom, null);
-			tiles.put(tileKey, tile);
-		}
-		
-		/* tests if there can be some rounding errors
-		PointF startP = mapToScreen(bbox.minX + (tileWidthPx*x)*getResolution(), bbox.minY + (tileHeightPx*y)*getResolution());
-		Log.i(TAG, format("x diff %f, y diff %f",
-				(((tileWidthPx*x)*getResolution())-tileWidth*x),
-				(((tileHeightPx*y)*getResolution())-tileHeight*y)
-				));
-		*/
-		PointF startP = mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
-		if (tile.getImage() != null) {
-			canvas.drawBitmap(tile.getImage(), startP.x, startP.y-256f, null);
-		}
-		if (true) return;
-		
-		canvas.drawRect(startP.x, startP.y - 256f, startP.x + 256f, startP.y, tileStyle);
-		/*
-		canvas.drawText(format("x=%d y=%d", x, y),
-			startP.x+50, startP.y+127,
-			tileStyle);
-		if (true) return;
-		*/
-		
-		int xPos = (int) startP.x+50;
-		int yPos = (int) startP.y-127;
-		
-		// draw "x="
-		canvas.drawBitmap(textBuffer,
-				new Rect(0, 310, 25, 340),
-				new Rect(xPos, yPos, xPos+25, yPos+30),
-				null);
-		xPos += 30;
-		drawNumber(canvas, x, xPos, yPos);
-		xPos += 35;
-		
-		// draw "y="
-		canvas.drawBitmap(textBuffer,
-				new Rect(0, 340, 25, 380),
-				new Rect(xPos, yPos, xPos+25, yPos+40),
-				null);
-		xPos += 30;
-		drawNumber(canvas, y, xPos, yPos);
-	}
-
-	private void drawNumber(Canvas canvas, int number, int x, int y) {
-		String strNum = "" + number;
-		//Log.i(TAG, "draw number: "+number);
-		int xPos = x;
-		for (int i = 0; i < strNum.length(); i++) {
-			int n = strNum.charAt(i) - 48;
-			//Log.i(TAG, "digit: "+n);
-			int width = (int) numbersWidths[n];
-			canvas.drawBitmap(textBuffer,
-					new Rect(0, 30*(n), width, 30*(n+1)),
-					new RectF(xPos, y, xPos + width, y + 30),
-					null);
-			xPos += width+1;
-		}
-	}
-
 	private PointF screenToMap2(float x, float y) {
 		float offsetX = x - width / 2f;
 		float offsetY = (height / 2f) - y;
@@ -401,21 +314,21 @@ public class Map extends View implements TileListener, MapView {
 				+ offsetY * getResolution());
 	}
 
-	private PointF screenToMap(float x, float y) {
+	public final PointF screenToMap(float x, float y) {
 		float offsetX = x - width / 2f;
 		float offsetY = (height / 2f) - y;
 		return new PointF(center.x + offsetX * getResolution(), center.y + offsetY
 				* getResolution());
 	}
 
-	private PointF mapToScreen(float x, float y) {
+	public final PointF mapToScreen(float x, float y) {
 		float offsetX = x - center.x;
 		float offsetY = center.y - y;
 		return new PointF(width / 2f + offsetX / getResolution(), height / 2f + offsetY
 				/ getResolution());
 	}
 
-	private float getResolution() {
+	public final float getResolution() {
 		return (float) tmsLayer.getResolutions()[zoom-1];
 	}
 
