@@ -95,9 +95,11 @@ public class Map extends View implements TileListener, MapView {
 		}
 	}
 
+	private int size;
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.i(TAG, format("width: %d height: %d", w, h));
+		size = (int) Math.ceil(Math.sqrt(w*w+h*h));
 		width = w;
 		height = h;
 		clearTiles();
@@ -210,13 +212,13 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		canvas.drawRGB(255, 255, 255);
-		canvas.rotate(heading, width/2f, height/2f);
 		
 		//canvas.scale(1, -1, width / 2f, height / 2f);
 		canvas.scale(1, -1);
 		canvas.translate(0, -height);
 		float scale = 0.5f; 
-		canvas.scale(scale, scale, width / 2f, height / 2f);
+		//canvas.scale(scale, scale, width / 2f, height / 2f);
+		canvas.rotate(-heading, width/2f, height/2f);
 		
 		canvas.drawLine(0, 0, 20, 10, screenBorderStyle);
 
@@ -232,8 +234,8 @@ public class Map extends View implements TileListener, MapView {
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
 			return;
 		}
-		Point s = getTileAtScreen(0, 0);
-		Point e = getTileAtScreen(width, height);
+		Point s = getTileAtScreen(-(size-width)/2, -(size-height)/2);
+		Point e = getTileAtScreen(width+(size-width)/2, height+(size-height)/2);
 		
 		//Log.i(TAG, format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x, s.y, e.x, e.y));
 		int lastTileX = (int) ((bbox.maxX - bbox.minX) / tileWidth);
@@ -296,6 +298,8 @@ public class Map extends View implements TileListener, MapView {
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		
 		canvas.drawRect(0, 0, width, height, screenBorderStyle2);
+		canvas.drawArc(new RectF(-3, -3, 3, 3), 0, 360, true, screenBorderStyle2);
+		
 		canvas.rotate(heading, width/2f, height/2f);
 		canvas.drawRect(0, 0, width, height, screenBorderStyle);
 	}
@@ -317,6 +321,14 @@ public class Map extends View implements TileListener, MapView {
 	}
 
 	public final PointF screenToMap(float x, float y) {
+		/*
+		Matrix m = new Matrix();
+		m.postRotate(heading, width/2f, height/2f);
+		float[] pos = new float[] {x, y};
+		m.mapPoints(pos);
+		float offsetX = pos[0] - width / 2f;
+		float offsetY = pos[1] - height / 2f;
+		*/
 		float offsetX = x - width / 2f;
 		float offsetY = y - height / 2f;
 		return new PointF(center.x + offsetX * getResolution(), center.y + offsetY
