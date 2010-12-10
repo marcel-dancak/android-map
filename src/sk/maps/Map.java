@@ -119,7 +119,10 @@ public class Map extends View implements TileListener, MapView {
 	private PointF lastPos;
 	private PointF dragStartPx;
 
-	private boolean filterEvent;
+	// coordinates on map and screen to compute aligned positions from map to the screen
+	private PointF fixedPointOnMap = new PointF();
+	private Point fixedPointOnScreen = new Point();
+	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		float x = event.getX();
@@ -234,11 +237,14 @@ public class Map extends View implements TileListener, MapView {
 		lastTileY = e.y < lastTileY ? e.y : lastTileY;
 		int firstTileX = s.x > 0 ? s.x : 0;
 		int firstTileY = s.y > 0 ? s.y : 0;
-		PointF fixedPoint = mapToScreen(bbox.minX + tileWidth * firstTileX, bbox.minY + tileHeight * firstTileY);
-		int sx = (int) fixedPoint.x;
-		int sy = (int) fixedPoint.y;
 		
-		long t1 = System.currentTimeMillis();
+		fixedPointOnMap.x = bbox.minX + tileWidth * firstTileX;
+		fixedPointOnMap.y = bbox.minY + tileHeight * firstTileY;
+		PointF p = mapToScreen(fixedPointOnMap.x, fixedPointOnMap.y);
+		fixedPointOnScreen.x = (int) Math.round(p.x);
+		fixedPointOnScreen.y = (int) Math.round(p.y);
+		
+		//long t1 = System.currentTimeMillis();
 		//Log.i(TAG, format("sx=%d sy=%d firstTileX=%d firstTileY=%d", sx, sy, firstTileX, firstTileY));
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
@@ -252,18 +258,17 @@ public class Map extends View implements TileListener, MapView {
 					//tiles.put(tileKey, tile);
 				}
 				if (tile.getImage() != null) {
-					Matrix m = canvas.getMatrix();
-					canvas.scale(1, -1, sx + (256*(x-firstTileX))+128, sy+(y-firstTileY)*256+128);
-					canvas.drawBitmap(tile.getImage(), sx + (256*(x-firstTileX)), sy+(y-firstTileY)*256, imagesStyle);
-					visualDebugger.drawTile(canvas, x, y);
-					//canvas.scale(1, -1, 128, 128);
-					canvas.setMatrix(m);
+					float left = fixedPointOnScreen.x+(256*(x-firstTileX));
+					float bottom = fixedPointOnScreen.y+(y-firstTileY)*256;
+					canvas.scale(1, -1, left, bottom+128);
+					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
+					//visualDebugger.drawTile(canvas, x, y);
+					canvas.scale(1, -1, left, bottom+128);
 				}
-				//drawTile(canvas, x, y);
 			}
 		}
 		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
-		t1 = System.currentTimeMillis();
+		//t1 = System.currentTimeMillis();
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
 				String tileKey = tileKey(x, y);
@@ -278,18 +283,10 @@ public class Map extends View implements TileListener, MapView {
 		}
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
-		Point2D p = new Point2D();
-		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p);
-		//Log.i(TAG, format("projected position: [%f, %f]", p.x, p.y));
-		float positionOffsetX = (float) p.x-(bbox.minX + tileWidth * firstTileX);
-		float positionOffsetY = (float) p.y-(bbox.minY + tileHeight * firstTileY);
-		PointF currentPos = new PointF(sx+positionOffsetX/getResolution(), sy+positionOffsetY/getResolution());
-		
-		//PointF currentPos = mapToScreen((float) p.x, (float) p.y);
-		//PointF currentPos = mapToScreen(2367713, 6276560);
-		//bbox = 2351125 2376721
-		//Log.i(TAG, format("on screen: [%d, %d]", (int) currentPos.x, (int) currentPos.y));
-		//PointF currentPos = mapToScreen(21.23886386f, 49.00096926f);
+		Point2D p2 = new Point2D();
+		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p2);
+		//Log.i(TAG, format("projected position: [%f, %f]", p2.x, p2.y));
+		PointF currentPos = mapToScreenAligned((float) p2.x, (float) p2.y);
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		
 		canvas.drawRect(0, 0, width, height, screenBorderStyle);
@@ -325,6 +322,12 @@ public class Map extends View implements TileListener, MapView {
 				/ getResolution());
 	}
 
+	public final PointF mapToScreenAligned(float x, float y) {
+		float positionOffsetX = x - fixedPointOnMap.x;
+		float positionOffsetY = y - fixedPointOnMap.y;
+		return new PointF(fixedPointOnScreen.x+positionOffsetX/getResolution(), fixedPointOnScreen.y+positionOffsetY/getResolution());
+	}
+	
 	public final float getResolution() {
 		return (float) tmsLayer.getResolutions()[zoom-1];
 	}

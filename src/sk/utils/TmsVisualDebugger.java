@@ -55,7 +55,7 @@ public class TmsVisualDebugger {
 		float tileWidth = layer.getTileWidth() * map.getResolution();
 		float tileHeight = layer.getTileHeight() * map.getResolution();
 		
-		PointF startP = map.mapToScreen(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
+		PointF startP = map.mapToScreenAligned(bbox.minX + tileWidth * x, bbox.minY + tileHeight * y);
 		canvas.drawRect(startP.x, startP.y, startP.x+256f, startP.y+256, tileStyle);
 		/*
 		canvas.drawText(format("x=%d y=%d", x, y),
