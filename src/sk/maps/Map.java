@@ -48,6 +48,7 @@ public class Map extends View implements TileListener, MapView {
 	private Paint imagesStyle;
 	private Paint mapStyle;
 	private Paint screenBorderStyle;
+	private Paint screenBorderStyle2;
 	
 	private Timer animTimer = new Timer();
 	private TmsVisualDebugger visualDebugger;
@@ -72,6 +73,9 @@ public class Map extends View implements TileListener, MapView {
 		screenBorderStyle.setAntiAlias(true);
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
+		screenBorderStyle2 = new Paint(screenBorderStyle);
+		screenBorderStyle2.setColor(Color.rgb(150, 30, 50));
+		
 		tmsLayer.addTileListener(this);
 		setZoom(1);
 		
@@ -155,7 +159,7 @@ public class Map extends View implements TileListener, MapView {
 							}
 						});
 					}
-				}, 30, 40);
+				}, 30, 50);
 				
 				break;
 			case MotionEvent.ACTION_UP:
@@ -163,17 +167,16 @@ public class Map extends View implements TileListener, MapView {
 				animTimer = new Timer();
 				break;
 			case MotionEvent.ACTION_MOVE:
-				/*
-				filterEvent = !filterEvent;
-				if (filterEvent) {
-					break;
-				}
-				*/
-//				PointF dragPos2 = screenToMap2(x, y);
-//				center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
-//				lastPos = dragPos2;
-//				invalidate();
-//				if (true) break;
+				PointF dragPos2 = screenToMap2(x, y);
+				Matrix m = new Matrix();
+				m.postRotate(heading, lastPos.x, lastPos.y);
+				float[] pos = new float[] {dragPos2.x, dragPos2.y};
+				m.mapPoints(pos);
+				//center.set(pos[0], pos[1]);
+				center.offset(lastPos.x-pos[0], lastPos.y-pos[1]);
+				//center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
+				lastPos = dragPos2;
+				if (true) break;
 				
 				PointF dragPos = screenToMap2(x, y);
 				// Log.i(TAG, format("Start [%f, %f] currnet [%f, %f]",
@@ -190,9 +193,12 @@ public class Map extends View implements TileListener, MapView {
 				 * (dragStartPx.y-y)*getResolution()));
 				 */
 				center.set(centerAtDragStart);
-				center.offset(dragStart.x - dragPos.x, dragStart.y - dragPos.y);
-				// center.offset((dragStartPx.x-x)*getResolution(), (dragStartPx.y-y)*getResolution());
-
+				m.reset();
+				m.postRotate(heading, dragStart.x, dragStart.y);
+				pos = new float[] {dragPos.x, dragPos.y};
+				m.mapPoints(pos);
+				center.offset(dragStart.x - pos[0], dragStart.y - pos[1]);
+				//center.offset(dragStart.x - dragPos.x, dragStart.y - dragPos.y);
 				//invalidate();
 				break;
 			}
@@ -210,7 +216,7 @@ public class Map extends View implements TileListener, MapView {
 		canvas.scale(1, -1);
 		canvas.translate(0, -height);
 		float scale = 0.5f; 
-		//canvas.scale(scale, scale, width / 2f, height / 2f);
+		canvas.scale(scale, scale, width / 2f, height / 2f);
 		
 		canvas.drawLine(0, 0, 20, 10, screenBorderStyle);
 
@@ -262,7 +268,7 @@ public class Map extends View implements TileListener, MapView {
 					float bottom = fixedPointOnScreen.y+(y-firstTileY)*256;
 					canvas.scale(1, -1, left, bottom+128);
 					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
-					//visualDebugger.drawTile(canvas, x, y);
+					visualDebugger.drawTile(canvas, x, y);
 					canvas.scale(1, -1, left, bottom+128);
 				}
 			}
@@ -289,6 +295,8 @@ public class Map extends View implements TileListener, MapView {
 		PointF currentPos = mapToScreenAligned((float) p2.x, (float) p2.y);
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
 		
+		canvas.drawRect(0, 0, width, height, screenBorderStyle2);
+		canvas.rotate(heading, width/2f, height/2f);
 		canvas.drawRect(0, 0, width, height, screenBorderStyle);
 	}
 

@@ -133,7 +133,7 @@ public class Main extends Activity implements SensorEventListener {
 	public void onSensorChanged(SensorEvent event) {
 		int heading = (int) event.values[0];
 		//Log.i(TAG, "heading:" +heading);
-		//map.setHeading(-heading);
+		map.setHeading(-heading);
 	}
 
 	@Override
