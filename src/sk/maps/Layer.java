@@ -85,6 +85,10 @@ public abstract class Layer {
 			return image;
 		}
 		
+		public void setImage(Bitmap image) {
+			this.image = image;
+		}
+		
 		public void recycle() {
 			if (image != null) {
 				image.recycle();

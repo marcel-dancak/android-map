@@ -325,7 +325,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 					if (tiles.containsKey(tileKey)) {
 						tile = tiles.get(tileKey);
 					} else {
-						tmsLayer.requestTile(zoom, x, y);
+						tmsLayer.requestTile(tile);
 						tile = new Tile(x, y, zoom, null);
 						tiles.put(tileKey, tile);
 					}
@@ -370,7 +370,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 			if (tiles.containsKey(tileKey)) {
 				tile = tiles.get(tileKey);
 			} else {
-				tmsLayer.requestTile(zoom, x, y);
+				tmsLayer.requestTile(tile);
 				tile = new Tile(x, y, zoom, null);
 				tiles.put(tileKey, tile);
 			}

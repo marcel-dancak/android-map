@@ -1,6 +1,8 @@
 package sk.maps;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import static java.lang.String.format;
@@ -52,6 +54,7 @@ public class Map extends View implements TileListener, MapView {
 	
 	private Timer animTimer = new Timer();
 	private TmsVisualDebugger visualDebugger;
+	private boolean isMooving;
 	
 	public Map(Context context, TmsLayer layer) {
 		super(context);
@@ -145,6 +148,7 @@ public class Map extends View implements TileListener, MapView {
 						Runtime.getRuntime().totalMemory()/1024,
 						Runtime.getRuntime().maxMemory()/1024));
 				*/
+				isMooving = true;
 				centerAtDragStart = new PointF(center.x, center.y);
 				dragStart = screenToMap(x, y);
 				dragStartPx = new PointF(x, y);
@@ -167,6 +171,7 @@ public class Map extends View implements TileListener, MapView {
 			case MotionEvent.ACTION_UP:
 				animTimer.cancel();
 				animTimer = new Timer();
+				isMooving = false;
 				break;
 			case MotionEvent.ACTION_MOVE:
 				PointF dragPos2 = screenToMap2(x, y);
@@ -209,6 +214,8 @@ public class Map extends View implements TileListener, MapView {
 		return true;
 	}
 
+	List<Tile> neededTiles = new ArrayList<Layer.Tile>();
+	
 	@Override
 	protected void onDraw(Canvas canvas) {
 		canvas.drawRGB(255, 255, 255);
@@ -218,13 +225,13 @@ public class Map extends View implements TileListener, MapView {
 		canvas.translate(0, -height);
 		float scale = 0.5f; 
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
-		canvas.rotate(-heading, width/2f, height/2f);
+		//canvas.rotate(-heading, width/2f, height/2f);
 		
-		canvas.drawLine(0, 0, 20, 10, screenBorderStyle);
+		//canvas.drawLine(0, 0, 20, 10, screenBorderStyle);
 
 		PointF startP = mapToScreen(bbox.minX, bbox.minY);
 		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
-		canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
+		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 
 		//canvas.drawRect(startP.x, startP.y, startP.x+256, startP.y+256, screenBorderStyle);
@@ -234,8 +241,10 @@ public class Map extends View implements TileListener, MapView {
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
 			return;
 		}
-		Point s = getTileAtScreen(-(size-width)/2, -(size-height)/2);
-		Point e = getTileAtScreen(width+(size-width)/2, height+(size-height)/2);
+		Point s = getTileAtScreen(0, 0);
+		Point e = getTileAtScreen(width, height);
+		//Point s = getTileAtScreen(-(size-width)/2, -(size-height)/2);
+		//Point e = getTileAtScreen(width+(size-width)/2, height+(size-height)/2);
 		
 		//Log.i(TAG, format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x, s.y, e.x, e.y));
 		int lastTileX = (int) ((bbox.maxX - bbox.minX) / tileWidth);
@@ -252,7 +261,8 @@ public class Map extends View implements TileListener, MapView {
 		fixedPointOnScreen.x = (int) Math.round(p.x);
 		fixedPointOnScreen.y = (int) Math.round(p.y);
 		
-		//long t1 = System.currentTimeMillis();
+		neededTiles.clear();
+		long t1 = System.currentTimeMillis();
 		//Log.i(TAG, format("sx=%d sy=%d firstTileX=%d firstTileY=%d", sx, sy, firstTileX, firstTileY));
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
@@ -263,20 +273,27 @@ public class Map extends View implements TileListener, MapView {
 				} else {
 					//tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
 					tile = new Tile(x, y, zoom, null);
-					//tiles.put(tileKey, tile);
+					tiles.put(tileKey, tile);
+					neededTiles.add(tile);
 				}
 				if (tile.getImage() != null) {
 					float left = fixedPointOnScreen.x+(256*(x-firstTileX));
 					float bottom = fixedPointOnScreen.y+(y-firstTileY)*256;
 					canvas.scale(1, -1, left, bottom+128);
 					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
-					visualDebugger.drawTile(canvas, x, y);
+					//visualDebugger.drawTile(canvas, x, y);
 					canvas.scale(1, -1, left, bottom+128);
 				}
 			}
 		}
 		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
-		//t1 = System.currentTimeMillis();
+		t1 = System.currentTimeMillis();
+		//for (Tile tile : neededTiles) {
+			//tmsLayer.requestTile(tile);
+			//tiles.put(tileKey(tile.getX(), tile.getY()), tile);
+		//}
+		tmsLayer.requestTiles(neededTiles);
+		/*
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
 				String tileKey = tileKey(x, y);
@@ -284,24 +301,26 @@ public class Map extends View implements TileListener, MapView {
 					//tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
 					Tile tile = new Tile(x, y, zoom, null);
 					//System.out.println("need a tile");
-					tmsLayer.requestTile2(tile);
+					tmsLayer.requestTile(tile);
 					tiles.put(tileKey, tile);
 				}
 			}
 		}
-		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
+		*/
+		System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
 		Point2D p2 = new Point2D();
 		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p2);
 		//Log.i(TAG, format("projected position: [%f, %f]", p2.x, p2.y));
 		PointF currentPos = mapToScreenAligned((float) p2.x, (float) p2.y);
 		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
-		
+		/*
 		canvas.drawRect(0, 0, width, height, screenBorderStyle2);
 		canvas.drawArc(new RectF(-3, -3, 3, 3), 0, 360, true, screenBorderStyle2);
 		
 		canvas.rotate(heading, width/2f, height/2f);
 		canvas.drawRect(0, 0, width, height, screenBorderStyle);
+		*/
 	}
 
 	private Point getTileAtScreen(int x, int y) {
@@ -377,13 +396,15 @@ public class Map extends View implements TileListener, MapView {
 			}
 			tiles.put(tileKey, tile);
 		}
-		post(new Runnable() {
-			
-			@Override
-			public void run() {
-				invalidate();
-			}
-		});
+		if (! isMooving) {
+			post(new Runnable() {
+				
+				@Override
+				public void run() {
+					invalidate();
+				}
+			});
+		}
 	}
 
 	@Override
