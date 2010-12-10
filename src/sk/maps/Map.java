@@ -36,7 +36,7 @@ public class Map extends View implements TileListener, MapView {
 	private float tileWidth;
 	private float tileHeight;
 
-	// size of map in pixels
+	// size of screen (map) in pixels
 	private int width;
 	private int height;
 
@@ -122,6 +122,9 @@ public class Map extends View implements TileListener, MapView {
 	private boolean filterEvent;
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		float x = event.getX();
+		float y = height-event.getY();
+		
 		if (event.getPointerCount() == 1) {
 			int action = event.getAction() & MotionEvent.ACTION_MASK;
 			switch (action) {
@@ -134,9 +137,9 @@ public class Map extends View implements TileListener, MapView {
 						Runtime.getRuntime().maxMemory()/1024));
 				*/
 				centerAtDragStart = new PointF(center.x, center.y);
-				dragStart = screenToMap(event.getX(), event.getY());
-				dragStartPx = new PointF(event.getX(), event.getY());
-				lastPos = screenToMap(event.getX(), event.getY());
+				dragStart = screenToMap(x, y);
+				dragStartPx = new PointF(x, y);
+				lastPos = screenToMap(x, y);
 				animTimer.schedule(new TimerTask() {
 					
 					@Override
@@ -163,13 +166,13 @@ public class Map extends View implements TileListener, MapView {
 					break;
 				}
 				*/
-//				PointF dragPos2 = screenToMap2(event.getX(), event.getY());
+//				PointF dragPos2 = screenToMap2(x, y);
 //				center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
 //				lastPos = dragPos2;
 //				invalidate();
 //				if (true) break;
 				
-				PointF dragPos = screenToMap2(event.getX(), event.getY());
+				PointF dragPos = screenToMap2(x, y);
 				// Log.i(TAG, format("Start [%f, %f] currnet [%f, %f]",
 				// dragStart.x, dragStart.y, dragPos.x, dragPos.y));
 				// Log.i(TAG,
@@ -180,13 +183,12 @@ public class Map extends View implements TileListener, MapView {
 				 * Log.i(TAG, format("set center (%f, %f) vs (%f, %f)",
 				 * centerAtDragStart.x+(dragStart.x-dragPos.x),
 				 * centerAtDragStart.y+(dragStart.y-dragPos.y),
-				 * (dragStartPx.x-event.getX())*getResolution(),
-				 * (dragStartPx.y-event.getY())*getResolution()));
+				 * (dragStartPx.x-x)*getResolution(),
+				 * (dragStartPx.y-y)*getResolution()));
 				 */
 				center.set(centerAtDragStart);
 				center.offset(dragStart.x - dragPos.x, dragStart.y - dragPos.y);
-				// center.offset((dragStartPx.x-event.getX())*getResolution(),
-				// (dragStartPx.y-event.getY())*getResolution());
+				// center.offset((dragStartPx.x-x)*getResolution(), (dragStartPx.y-y)*getResolution());
 
 				//invalidate();
 				break;
@@ -217,12 +219,12 @@ public class Map extends View implements TileListener, MapView {
 		//canvas.drawRect(startP.x, startP.y, startP.x+256, startP.y+256, screenBorderStyle);
 		// Log.d(TAG, format("first tile [%f, %f]", startP.x, startP.y));
 		
-		PointF o = screenToMap(0, height);
+		PointF o = screenToMap(0, 0);
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
 			return;
 		}
-		Point s = getTileAtScreen(0, height);
-		Point e = getTileAtScreen(width, 0);
+		Point s = getTileAtScreen(0, 0);
+		Point e = getTileAtScreen(width, height);
 		
 		//Log.i(TAG, format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x, s.y, e.x, e.y));
 		int lastTileX = (int) ((bbox.maxX - bbox.minX) / tileWidth);
@@ -304,14 +306,14 @@ public class Map extends View implements TileListener, MapView {
 
 	private PointF screenToMap2(float x, float y) {
 		float offsetX = x - width / 2f;
-		float offsetY = (height / 2f) - y;
+		float offsetY = y - height / 2f;
 		return new PointF(centerAtDragStart.x + offsetX * getResolution(), centerAtDragStart.y
 				+ offsetY * getResolution());
 	}
 
 	public final PointF screenToMap(float x, float y) {
 		float offsetX = x - width / 2f;
-		float offsetY = (height / 2f) - y;
+		float offsetY = y - height / 2f;
 		return new PointF(center.x + offsetX * getResolution(), center.y + offsetY
 				* getResolution());
 	}
