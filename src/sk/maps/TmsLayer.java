@@ -1,14 +1,18 @@
 package sk.maps;
 
 import static java.lang.String.format;
+
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import sk.maps.Layer.Tile;
 
@@ -51,35 +55,39 @@ public class TmsLayer extends Layer {
 		startLoop();
 	}
 	
+	BlockingQueue<Tile> queue = new LinkedBlockingQueue<Layer.Tile>(10);
+	
 	private void startLoop() {
 		Thread t = new Thread() {
 			@Override
 			public void run() {
 				boolean run = true;
 				while (run) {
-					synchronized (unproccessed) {
-						while (unproccessed.size() > 0) {
-							pool.submit(new Runnable() {
-								@Override
-								public void run() {
-									process(unproccessed.get(0));
-								}
-							});
-							//synchronized (unproccessed) {
-								unproccessed.remove(0);
-						}
-							try {
-								System.out.println("waiting");
-								unproccessed.wait(400);
-								System.out.println("wake up! "+unproccessed.size());
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
+					final Tile t;
+					try {
+						t = queue.take();
+						System.out.println("Taken tile");
+						//Thread.sleep(200);
+						
+						pool.submit(new Runnable() {
 							
+							Tile tile = t;
+							@Override
+							public void run() {
+								System.out.println("task started");
+								process(tile);
+								//requestTile2(tile);
+							}
+						});
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
+					
 				}
 			}
+				
 		};
+		t.setPriority(Thread.MIN_PRIORITY);
 		t.start();
 	}
 	
@@ -99,12 +107,18 @@ public class TmsLayer extends Layer {
 			String query = format("/1.0.0/%s/%d/%d/%d.%s", name, tile.getZoomLevel()-1, tile.getX(), tile.getY(), format);
 			url = new URL(serverUrl+"/"+query);
 			//Log.i(TAG, url.toString());
-			System.out.println(url.toString());
+			//System.out.println(url.toString());
 			HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
 			//Log.i(TAG, "Content Type: "+httpCon.getContentType());
 			//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
-			
-			Bitmap image = BitmapFactory.decodeStream(httpCon.getInputStream());
+			//System.out.println("start decoding ");
+			InputStream is = httpCon.getInputStream();
+			//byte[] buf = new byte[5	];
+			//is.read(buf);
+			//System.out.println(new String(buf));
+			Bitmap image = BitmapFactory.decodeStream(is);
+			is.close();
+			//System.out.println("image"+image);
 			//imageStream.close();
 			if (image != null) {
 				//Log.i(TAG, format("Get image %d x %d", image.getWidth(), image.getHeight()));
@@ -121,11 +135,25 @@ public class TmsLayer extends Layer {
 		//fireTileLoadingFailed(new Tile(tile.getX(), tile.getY(), tile.getZoomLevel(), null));
 	}
 	
-	public void requestTiles(List<Tile> tiles) {
-		synchronized (unproccessed) {
-			unproccessed.addAll(tiles);
-			unproccessed.notifyAll();
+	public void requestTiles3(List<Tile> tiles) {
+		for (final Tile t : tiles) {
+			pool.submit(new Runnable() {
+				
+				//Tile tile = t;
+				@Override
+				public void run() {								
+					process(t);
+				}
+			});
 		}
+	}
+	
+	public void requestTiles(List<Tile> tiles) {
+		System.out.println("REQUEST start"+tiles.size());
+		queue.addAll(tiles);
+		//for (Tile tile : tiles) {
+		//}
+		System.out.println("REQUEST end");
 	}
 	
 	public void requestTile(final Tile tile) {
@@ -207,9 +235,9 @@ public class TmsLayer extends Layer {
 				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
 				//Log.i(TAG, "Content Type: "+httpCon.getContentType());
 				//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
-				
-				image = BitmapFactory.decodeStream(httpCon.getInputStream());
-				//imageStream.close();
+				InputStream is = httpCon.getInputStream();
+				image = BitmapFactory.decodeStream(is);
+				is.close();
 
 			} catch (Exception e) {
 				Log.e(TAG, "what!", e);

@@ -165,7 +165,7 @@ public class Map extends View implements TileListener, MapView {
 							}
 						});
 					}
-				}, 30, 50);
+				}, 30, 60);
 				
 				break;
 			case MotionEvent.ACTION_UP:
@@ -292,7 +292,9 @@ public class Map extends View implements TileListener, MapView {
 			//tmsLayer.requestTile(tile);
 			//tiles.put(tileKey(tile.getX(), tile.getY()), tile);
 		//}
-		tmsLayer.requestTiles(neededTiles);
+		if (neededTiles.size() > 0) {
+			tmsLayer.requestTiles(neededTiles);
+		}
 		/*
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
