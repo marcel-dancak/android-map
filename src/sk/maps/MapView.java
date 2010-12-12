@@ -6,4 +6,5 @@ public interface MapView {
 	int getZoom();
 	
 	void setHeading(int heading);
+	void setLayer(TmsLayer layer);
 }

@@ -28,6 +28,7 @@ public class TmsLayer extends Layer {
 
 	private static final String TAG = TmsLayer.class.getName();
 	
+	private String title;
 	private String serverUrl;
 	private String name;
 	private String format;
@@ -55,6 +56,14 @@ public class TmsLayer extends Layer {
 		startLoop();
 	}
 	
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
 	BlockingQueue<Tile> queue = new LinkedBlockingQueue<Layer.Tile>(10);
 	
 	private void startLoop() {

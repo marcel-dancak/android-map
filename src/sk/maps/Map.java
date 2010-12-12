@@ -58,12 +58,6 @@ public class Map extends View implements TileListener, MapView {
 	
 	public Map(Context context, TmsLayer layer) {
 		super(context);
-		//this.layers = Collections.unmodifiableList(layers);
-		this.tmsLayer = layer;
-		this.bbox = layer.getBoundingBox();
-		
-		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
-
 		imagesStyle = new Paint();
 		imagesStyle.setFilterBitmap(true);
 		
@@ -78,13 +72,20 @@ public class Map extends View implements TileListener, MapView {
 
 		screenBorderStyle2 = new Paint(screenBorderStyle);
 		screenBorderStyle2.setColor(Color.rgb(150, 30, 50));
-		
-		tmsLayer.addTileListener(this);
-		setZoom(1);
-		
-		visualDebugger = new TmsVisualDebugger(this);
+
+		setLayer(layer);
 	}
 
+	public void setLayer(TmsLayer layer) {
+		tmsLayer = layer;
+		bbox = layer.getBoundingBox();
+		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
+
+		tmsLayer.addTileListener(this);
+		visualDebugger = new TmsVisualDebugger(this);
+		setZoom(1);
+	}
+	
 	public int getZoom() {
 		return zoom;
 	}
