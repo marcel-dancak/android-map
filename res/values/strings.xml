@@ -5,4 +5,9 @@
     <string name="layers_label">Layers</string>
     <string name="layers_shortcut">l</string>
     <string name="layers_prompt">Select layer</string>
+    <string name="settings_label">Settings</string>
+    <string name="settings_shortcut">s</string>
+    
+    <string name="layers_config_url_label">Layers configuration</string>
+    <string name="layers_config_summary">Url address of available layers</string>
 </resources>

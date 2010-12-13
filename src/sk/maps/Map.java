@@ -73,7 +73,9 @@ public class Map extends View implements TileListener, MapView {
 		screenBorderStyle2 = new Paint(screenBorderStyle);
 		screenBorderStyle2.setColor(Color.rgb(150, 30, 50));
 
-		setLayer(layer);
+		if (layer != null) {
+			setLayer(layer);
+		}
 	}
 
 	public void setLayer(TmsLayer layer) {
@@ -135,6 +137,9 @@ public class Map extends View implements TileListener, MapView {
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		if (tmsLayer == null) {
+			return false;
+		}
 		float x = event.getX();
 		float y = height-event.getY();
 		
@@ -220,7 +225,9 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		canvas.drawRGB(255, 255, 255);
-		
+		if (tmsLayer == null) {
+			return;
+		}
 		//canvas.scale(1, -1, width / 2f, height / 2f);
 		canvas.scale(1, -1);
 		canvas.translate(0, -height);
@@ -377,11 +384,12 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void onTileLoad(Tile tile) {
 		// throw away tiles with not actual zoom level (delayed)
+		Log.i(TAG, "onTileLoad: "+tile);
 		if (tile.getZoomLevel() != zoom) {
 			tile.recycle();
 			return;
 		}
-		String tileKey = format("%d:%d", tile.getX(), tile.getY());
+		String tileKey = tileKey(tile.getX(), tile.getY());
 		synchronized (tiles) {
 			if (tiles.size() > 35) {
 				Point centerTile = getTileAtScreen(width/2, height/2);
@@ -394,12 +402,12 @@ public class Map extends View implements TileListener, MapView {
 						}
 					}
 					mostFarAway.recycle();
-					tiles.remove(format("%d:%d", mostFarAway.getX(), mostFarAway.getY()));
+					tiles.remove(tileKey(mostFarAway.getX(), mostFarAway.getY()));
 				}
 			}
 			tiles.put(tileKey, tile);
 		}
-		if (! isMooving) {
+		//if (! isMooving) {
 			post(new Runnable() {
 				
 				@Override
@@ -407,12 +415,13 @@ public class Map extends View implements TileListener, MapView {
 					invalidate();
 				}
 			});
-		}
+		//}
 	}
 
 	@Override
 	public void onTileLoadingFailed(Tile tile) {
-		String tileKey = format("%d:%d", tile.getX(), tile.getY());
+		String tileKey = tileKey(tile.getX(), tile.getY());
+		Log.w(TAG, "onTileLoadingFailed: "+tile);
 		if (tiles.containsKey(tileKey)) {
 			tiles.remove(tileKey);
 		}

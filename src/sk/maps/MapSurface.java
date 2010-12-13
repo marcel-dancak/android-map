@@ -542,4 +542,10 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public TmsLayer getLayer() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

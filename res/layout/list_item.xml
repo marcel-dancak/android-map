@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckedTextView xmlns:a="http://schemas.android.com/apk/res/android"
+       a:layout_width="fill_parent"
+       a:layout_height="wrap_content"
+       a:textSize="18dp"
+       a:paddingBottom="5dp"
+       a:paddingTop="5dp"
+       a:background="@android:drawable/list_selector_background"
+       a:textColor="@color/black"
+       a:textColorHint="@color/white"
+       a:textColorHighlight="@color/blue">
+   </CheckedTextView>
+<!--       a:background="@drawable/selector"-->

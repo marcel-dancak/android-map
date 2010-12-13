@@ -4,5 +4,8 @@
 	<item android:id="@+id/layers"
 	   android:title="@string/layers_label"
 	   android:alphabeticShortcut="@string/layers_shortcut" />
+   <item android:id="@+id/settings"
+	   android:title="@string/settings_label"
+	   android:alphabeticShortcut="@string/settings_shortcut" />
 
 </menu>

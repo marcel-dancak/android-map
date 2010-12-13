@@ -75,7 +75,7 @@ public class TmsLayer extends Layer {
 					final Tile t;
 					try {
 						t = queue.take();
-						System.out.println("Taken tile");
+						//System.out.println("Taken tile");
 						//Thread.sleep(200);
 						
 						pool.submit(new Runnable() {
@@ -83,7 +83,7 @@ public class TmsLayer extends Layer {
 							Tile tile = t;
 							@Override
 							public void run() {
-								System.out.println("task started");
+								//System.out.println("task started");
 								process(tile);
 								//requestTile2(tile);
 							}
@@ -127,6 +127,8 @@ public class TmsLayer extends Layer {
 			//System.out.println(new String(buf));
 			Bitmap image = BitmapFactory.decodeStream(is);
 			is.close();
+			Log.i(TAG, url.toString());
+			Log.i(TAG, "image "+image);
 			//System.out.println("image"+image);
 			//imageStream.close();
 			if (image != null) {
@@ -144,7 +146,7 @@ public class TmsLayer extends Layer {
 		//fireTileLoadingFailed(new Tile(tile.getX(), tile.getY(), tile.getZoomLevel(), null));
 	}
 	
-	public void requestTiles3(List<Tile> tiles) {
+	public void requestTiles(List<Tile> tiles) {
 		for (final Tile t : tiles) {
 			pool.submit(new Runnable() {
 				
@@ -157,7 +159,7 @@ public class TmsLayer extends Layer {
 		}
 	}
 	
-	public void requestTiles(List<Tile> tiles) {
+	public void requestTiles2(List<Tile> tiles) {
 		System.out.println("REQUEST start"+tiles.size());
 		queue.addAll(tiles);
 		//for (Tile tile : tiles) {

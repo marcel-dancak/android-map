@@ -7,4 +7,5 @@ public interface MapView {
 	
 	void setHeading(int heading);
 	void setLayer(TmsLayer layer);
+	TmsLayer getLayer();
 }
