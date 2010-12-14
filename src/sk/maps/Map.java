@@ -79,13 +79,14 @@ public class Map extends View implements TileListener, MapView {
 	}
 
 	public void setLayer(TmsLayer layer) {
+		clearTiles();
 		tmsLayer = layer;
 		bbox = layer.getBoundingBox();
 		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
 
 		tmsLayer.addTileListener(this);
 		visualDebugger = new TmsVisualDebugger(this);
-		setZoom(1);
+		//setZoom(1);
 	}
 	
 	public int getZoom() {
@@ -114,6 +115,10 @@ public class Map extends View implements TileListener, MapView {
 		}
 	}
 	
+	public void recycle() {
+		clearTiles();
+	}
+	
 	private int size;
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -135,7 +140,12 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	private void clearTiles() {
-		tiles.clear();
+		synchronized (tiles) {
+			for (Tile tile : tiles.values()) {
+				tile.recycle();
+			}
+			tiles.clear();
+		}
 	}
 	
 	private PointF centerAtDragStart;

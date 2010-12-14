@@ -155,6 +155,7 @@ public class Main extends Activity implements SensorEventListener {
     protected void onStop() {
     	Log.i(TAG, "** onStop");
     	super.onStop();
+    	map.recycle();
     	saveState();
     }
     
@@ -224,9 +225,23 @@ public class Main extends Activity implements SensorEventListener {
 
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					System.out.println(which);
 					layerId = which;
-					map.setLayer(layers.get(layerId));
+					TmsLayer layer = layers.get(layerId);
+					Point2D newCenter = null;
+					if (map.getLayer() != null) {
+						Point2D center = new Point2D(map.getCenter().x, map.getCenter().y);
+						Point2D wgs84Center = new Point2D();
+			    		Projection proj = map.getLayer().getProjection();
+			    		proj.inverseTransform(center, wgs84Center);
+			    		// convert to the new layer's projection
+			    		newCenter = new Point2D();
+			    		layer.getProjection().transform(wgs84Center, newCenter);
+			    		
+					}
+					map.setLayer(layer);
+		    		if (newCenter != null) {
+		    			map.setCenter((float) newCenter.x, (float) newCenter.y);
+		    		}
 				}
 			};
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);

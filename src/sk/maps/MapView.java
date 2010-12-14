@@ -13,4 +13,6 @@ public interface MapView {
 	
 	PointF getCenter();
 	void setCenter(float x, float y);
+	
+	void recycle();
 }

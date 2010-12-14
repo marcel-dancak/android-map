@@ -68,6 +68,10 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		throw new UnsupportedOperationException();
 	}
 	
+	public void recycle() {
+		throw new UnsupportedOperationException();
+	}
+	
 	public void setZoom(int zoom) {
 		mapThread.setZoom(zoom);
 	}
