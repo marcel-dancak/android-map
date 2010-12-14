@@ -2,6 +2,11 @@ package sk.maps;
 
 import static java.lang.String.format;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -111,8 +116,6 @@ public class TmsLayer extends Layer {
 	private final void process(Tile tile) {
 		URL url;
 		try {
-			//System.out.println(format("%d %f : %s", 1, 5.42f, "sadsdf"));
-			System.out.println("....");
 			String query = format("/1.0.0/%s/%d/%d/%d.%s", name, tile.getZoomLevel()-1, tile.getX(), tile.getY(), format);
 			url = new URL(serverUrl+"/"+query);
 			//Log.i(TAG, url.toString());
@@ -120,17 +123,21 @@ public class TmsLayer extends Layer {
 			HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
 			//Log.i(TAG, "Content Type: "+httpCon.getContentType());
 			//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
-			//System.out.println("start decoding ");
 			InputStream is = httpCon.getInputStream();
-			//byte[] buf = new byte[5	];
-			//is.read(buf);
-			//System.out.println(new String(buf));
-			Bitmap image = BitmapFactory.decodeStream(is);
+			//InputStream is = new PatchInputStream(httpCon.getInputStream());
+			//InputStream is = new FlushedInputStream(httpCon.getInputStream());
+			//InputStream is = new ByteArrayInputStream(convertInputStreamToByteArray(httpCon.getInputStream()));
+			//Bitmap image = BitmapFactory.decodeStream(is);
+			
+			byte [] content = inputStreamToByteArray(is);
+			Bitmap image = BitmapFactory.decodeByteArray(content, 0, content.length);
+			//BitmapFactory.Options options = new BitmapFactory.Options();
+			//options.
+			//Bitmap image = BitmapFactory.decodeStream(is);
+			//Bitmap image = BitmapFactory.decodeStream(is, null, new Options());
 			is.close();
-			Log.i(TAG, url.toString());
-			Log.i(TAG, "image "+image);
-			//System.out.println("image"+image);
-			//imageStream.close();
+			//Log.i(TAG, url.toString());
+			//Log.i(TAG, "image "+image);
 			if (image != null) {
 				//Log.i(TAG, format("Get image %d x %d", image.getWidth(), image.getHeight()));
 				//tile.setImage(image);
@@ -159,12 +166,10 @@ public class TmsLayer extends Layer {
 		}
 	}
 	
-	public void requestTiles2(List<Tile> tiles) {
-		System.out.println("REQUEST start"+tiles.size());
+	public void requestTilesAsync(List<Tile> tiles) {
+		//System.out.println("REQUEST start"+tiles.size());
 		queue.addAll(tiles);
-		//for (Tile tile : tiles) {
-		//}
-		System.out.println("REQUEST end");
+		//System.out.println("REQUEST end");
 	}
 	
 	public void requestTile(final Tile tile) {
@@ -214,6 +219,11 @@ public class TmsLayer extends Layer {
 	private Queue<Runnable> tasks = new LinkedList<Runnable>();
 	private List<Downloader> downloaders = new ArrayList<Downloader>();
 	
+	public void requestTiles2(List<Tile> tiles) {
+		for (Tile t : tiles) {
+			requestTile2(t);
+		}
+	}
 	public void requestTile2(Tile tile) {
 		/*
 		for (Downloader d : downloaders) {
@@ -242,12 +252,11 @@ public class TmsLayer extends Layer {
 			try {
 				String query = format("/1.0.0/%s/%d/%d/%d.%s", layer.name, tile.getZoomLevel()-1, tile.getX(), tile.getY(), layer.format);
 				url = new URL(layer.serverUrl+"/"+query);
-				//Log.i(TAG, url.toString());
 				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-				//Log.i(TAG, "Content Type: "+httpCon.getContentType());
-				//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
 				InputStream is = httpCon.getInputStream();
-				image = BitmapFactory.decodeStream(is);
+				byte [] content = inputStreamToByteArray(is);
+				image = BitmapFactory.decodeByteArray(content, 0, content.length);
+				//image = BitmapFactory.decodeStream(is);
 				is.close();
 
 			} catch (Exception e) {
@@ -266,4 +275,80 @@ public class TmsLayer extends Layer {
 			}
 		}
 	}
+	
+	static class FlushedInputStream extends FilterInputStream {
+	    public FlushedInputStream(InputStream inputStream) {
+	        super(inputStream);
+	    }
+
+	    @Override
+	    public long skip(long n) throws IOException {
+	        long totalBytesSkipped = 0L;
+	        while (totalBytesSkipped < n) {
+	            long bytesSkipped = in.skip(n - totalBytesSkipped);
+	            if (bytesSkipped == 0L) {
+	                  int bytes = read();
+	                  if (bytes < 0) {
+	                      break;  // we reached EOF
+	                  } else {
+	                      bytesSkipped = 1; // we read one byte
+	                  }
+	           }
+	            totalBytesSkipped += bytesSkipped;
+	        }
+	        return totalBytesSkipped;
+	    }
+	}
+	
+	public class PatchInputStream extends FilterInputStream {
+		public PatchInputStream(InputStream in) {
+			super(in);
+		}
+
+		@Override
+		public int read() throws IOException {
+			Log.i(TAG, "read 1");
+			return super.read();
+		}
+
+		@Override
+		public int read(byte[] buffer, int offset, int count) throws IOException {
+			Log.i(TAG, "read 3");
+			return super.read(buffer, offset, count);
+		}
+		
+		@Override
+		public int read(byte[] buffer) throws IOException {
+			Log.i(TAG, "read 2");
+			return super.read(buffer);
+		}
+		
+		@Override
+		public long skip(long n) throws IOException {
+			Log.i(TAG, "skip " + n);
+			long m = 0L;
+			while (m < n) {
+				long _m = in.skip(n - m);
+				if (_m == 0L)
+					break;
+				m += _m;
+			}
+			return m;
+		}
+	}
+
+
+	public static final byte[] inputStreamToByteArray(InputStream is) throws IOException {
+		BufferedInputStream bis = new BufferedInputStream(is);
+		ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		int result = bis.read();
+		while(result !=-1) {
+			byte b = (byte)result;
+			buf.write(b);
+			result = bis.read();
+		}
+		return buf.toByteArray();
+	}
+
+
 }

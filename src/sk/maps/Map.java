@@ -301,7 +301,9 @@ public class Map extends View implements TileListener, MapView {
 			//tiles.put(tileKey(tile.getX(), tile.getY()), tile);
 		//}
 		if (neededTiles.size() > 0) {
-			tmsLayer.requestTiles(neededTiles);
+			//tmsLayer.requestTiles(neededTiles);
+			//tmsLayer.requestTilesAsync(neededTiles);
+			tmsLayer.requestTiles2(neededTiles);
 		}
 		/*
 		for (int x = firstTileX; x <= lastTileX; x++) {
@@ -317,7 +319,7 @@ public class Map extends View implements TileListener, MapView {
 			}
 		}
 		*/
-		System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
+		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
 		Point2D p2 = new Point2D();
 		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p2);
@@ -384,7 +386,7 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void onTileLoad(Tile tile) {
 		// throw away tiles with not actual zoom level (delayed)
-		Log.i(TAG, "onTileLoad: "+tile);
+		//Log.i(TAG, "onTileLoad: "+tile);
 		if (tile.getZoomLevel() != zoom) {
 			tile.recycle();
 			return;
@@ -407,7 +409,7 @@ public class Map extends View implements TileListener, MapView {
 			}
 			tiles.put(tileKey, tile);
 		}
-		//if (! isMooving) {
+		if (! isMooving) {
 			post(new Runnable() {
 				
 				@Override
@@ -415,7 +417,7 @@ public class Map extends View implements TileListener, MapView {
 					invalidate();
 				}
 			});
-		//}
+		}
 	}
 
 	@Override
