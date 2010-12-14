@@ -62,7 +62,9 @@ public class Map extends View implements TileListener, MapView {
 		imagesStyle.setFilterBitmap(true);
 		
 		mapStyle = new Paint();
-		mapStyle.setColor(Color.argb(127, 127, 20, 20));
+		mapStyle.setStrokeWidth(2f);
+		mapStyle.setStyle(Paint.Style.STROKE);
+		mapStyle.setColor(Color.argb(255, 0, 0, 0));
 
 		screenBorderStyle = new Paint();
 		screenBorderStyle.setStyle(Paint.Style.STROKE);
