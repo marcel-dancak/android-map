@@ -22,6 +22,8 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.database.DataSetObserver;
 import android.graphics.PointF;
 import android.hardware.Sensor;
@@ -51,12 +53,19 @@ public class Main extends Activity implements SensorEventListener {
 	
 	static final int DIALOG_LAYERS_ID = 0;
 
+	// temporary state values
+	static final String LAYERS_LIST = "LAYERS_LIST";
+	
+	// persistent state values
 	static final String ZOOM = "map_zoom";
 	static final String LAYER_ID = "layer_id";
 	static final String CENTER_X = "center_x";
 	static final String CENTER_Y = "center_y";
 	
+	private String layersSetting;
 	private int layerId;
+	
+	private SharedPreferences mapState;
 	
 	private SensorManager sensorManager;
 	private MapView map;
@@ -68,20 +77,12 @@ public class Main extends Activity implements SensorEventListener {
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+    	Log.i(TAG, "** onCreate");
         super.onCreate(savedInstanceState);
-        Log.i(TAG, PreferenceManager.getDefaultSharedPreferences(this).getString("layers_config_url", ""));
-
-        loadLayersConfig();
         
-        TmsLayer layer = null;
-        // set first layer if it's application startup (savedInstanceState is null) and there are some available layers
-        if (savedInstanceState == null && layerId < layers.size()){
-        	layer = layers.get(layerId);
-        } else {
-        	//startActivity(new Intent(this, Settings.class));
-        }
+        mapState = getSharedPreferences("MAP_STATE", MODE_PRIVATE);
         
-        map = new Map(this, layer);
+        map = new Map(this, null);
         //map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
         zoomIn = new Button(this);
         zoomIn.setText("+");
@@ -123,36 +124,64 @@ public class Main extends Activity implements SensorEventListener {
     }
     
     @Override
+    protected void onStart() {
+    	Log.i(TAG, "** onStart");
+    	super.onStart();
+    }
+    
+    @Override
     protected void onResume() {
-    	Log.i(TAG, "onResume");
+    	Log.i(TAG, "** onResume");
     	super.onResume();
     	
-    	if (layers.size() == 0) {
+    	if (layers == null || layers.size() == 0) {
     		loadLayersConfig();
     	}
+    	restoreState();
     }
     
     @Override
     protected void onSaveInstanceState(Bundle outState) {
     	Log.i(TAG, "Save State");
     	super.onSaveInstanceState(outState);
-    	outState.putInt(LAYER_ID, layerId);
-    	outState.putInt(ZOOM, map.getZoom());
-    	PointF center = map.getCenter();
-    	if (center != null) {
-    		outState.putFloat(CENTER_X, center.x);
-    		outState.putFloat(CENTER_Y, center.y);
+    	if (layersSetting != null) {
+    		//Log.i(TAG, "save layers list");
+    		outState.putString(LAYERS_LIST, layersSetting);
     	}
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-    	Log.i(TAG, "onRestoreInstanceState");
+    	Log.i(TAG, "** onRestoreInstanceState");
     	super.onRestoreInstanceState(savedInstanceState);
-    	layerId = savedInstanceState.getInt(LAYER_ID);
-    	int zoom = savedInstanceState.getInt(ZOOM, 1);
-    	float centerX = savedInstanceState.getFloat(CENTER_X, Float.MIN_VALUE);
-    	float centerY = savedInstanceState.getFloat(CENTER_Y, Float.MIN_VALUE);
+    	layersSetting = savedInstanceState.getString(LAYERS_LIST);
+    	loadLayersConfig();
+    }
+    
+    @Override
+    protected void onStop() {
+    	Log.i(TAG, "** onStop");
+    	super.onStop();
+    	saveState();
+    }
+    
+    private void saveState() {
+    	Editor state = mapState.edit();
+    	state.putInt(LAYER_ID, layerId);
+    	state.putInt(ZOOM, map.getZoom());
+    	PointF center = map.getCenter();
+    	if (center != null) {
+    		state.putFloat(CENTER_X, center.x);
+    		state.putFloat(CENTER_Y, center.y);
+    	}
+    	state.commit();
+    }
+    
+    private void restoreState() {
+    	layerId = mapState.getInt(LAYER_ID, 0);
+    	int zoom = mapState.getInt(ZOOM, 1);
+    	float centerX = mapState.getFloat(CENTER_X, Float.MIN_VALUE);
+    	float centerY = mapState.getFloat(CENTER_Y, Float.MIN_VALUE);
     	
     	if (layerId < layers.size()) {
     		map.setLayer(layers.get(layerId));
@@ -162,7 +191,6 @@ public class Main extends Activity implements SensorEventListener {
     		map.setCenter(centerX, centerY);
     	}
     }
-    
     
     @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -187,7 +215,8 @@ public class Main extends Activity implements SensorEventListener {
 
     @Override
     protected Dialog onCreateDialog(int id) {
-    	Dialog dialog;
+    	Log.i(TAG, "** onCreateDialog");
+    	Dialog dialog = null;
         switch(id) {
         case DIALOG_LAYERS_ID:
         	DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
@@ -201,33 +230,10 @@ public class Main extends Activity implements SensorEventListener {
 			};
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select Layer");
-
-			String[] items = new String[layers.size()];
-			for (int i = 0; i < layers.size(); i++) {
-				items[i] = layers.get(i).getTitle();
-			}
-			Log.i(TAG, "create dialog (layers "+layers.size());
-			builder.setItems(items, listener);
-			
+			builder.setItems(new String[0], listener);
 			AlertDialog layersDialog = builder.create();
-			/*
-			layersDialog.getListView().setSelector(R.drawable.selector);
-			layersDialog.getListView().setSelection(1);
-			
-			Dialog cdialog = new Dialog(this);
-			cdialog.setTitle("title");
-			ListView list = new ListView(this);
-			list.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, new String[] {"item1", "item2"}));
-			
-			list.setSelection(1);
-			list.setSelector(R.drawable.selector);
-			cdialog.setContentView(list);
-			*/
-			
 			dialog = layersDialog;
             break;
-        default:
-            dialog = null;
         }
         return dialog;
 
@@ -236,10 +242,9 @@ public class Main extends Activity implements SensorEventListener {
     @Override
     protected void onPrepareDialog(int id, Dialog dialog) {
     	super.onPrepareDialog(id, dialog);
-    	Log.i(TAG, "prepare dialog "+id);
+    	Log.i(TAG, "** onPrepareDialog "+id);
     	switch (id) {
 		case DIALOG_LAYERS_ID:
-			//if (true) break;
 			AlertDialog layersDialog = (AlertDialog) dialog;
 			String[] items = new String[layers.size()];
 			for (int i = 0; i < layers.size(); i++) {
@@ -283,10 +288,13 @@ public class Main extends Activity implements SensorEventListener {
         String settingUrl = PreferenceManager.getDefaultSharedPreferences(this).getString("layers_config_url", "");
         
         try {
-        	String settings = Utils.httpGet(settingUrl);
+        	if (layersSetting == null) {
+        		//Log.i(TAG, "****** GET SETTNINGS FROM NET "+settingUrl);
+        		layersSetting = Utils.httpGet(settingUrl);
+        	}
 			//String settings = Utils.httpGet(getString(R.string.settings_url));
         	//String settings = Utils.readInputStream(getResources().openRawResource(R.raw.settings));
-			JSONArray json = new JSONArray(settings);
+			JSONArray json = new JSONArray(layersSetting);
 			for (int i = 0; i < json.length(); i++) {
 				JSONObject layer = json.getJSONObject(i);
 				assert 1 == layer.names().length();
