@@ -1,15 +1,14 @@
 package sk.maps;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
+import com.jhlabs.geom.Point2D;
 import com.jhlabs.map.proj.Projection;
 import com.jhlabs.map.proj.ProjectionFactory;
 
@@ -24,7 +23,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.database.DataSetObserver;
 import android.graphics.PointF;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -37,16 +35,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckedTextView;
 import android.widget.LinearLayout;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 public class Main extends Activity implements SensorEventListener {
 	private static final String TAG = Main.class.getName();
@@ -169,10 +162,14 @@ public class Main extends Activity implements SensorEventListener {
     	Editor state = mapState.edit();
     	state.putInt(LAYER_ID, layerId);
     	state.putInt(ZOOM, map.getZoom());
-    	PointF center = map.getCenter();
-    	if (center != null) {
-    		state.putFloat(CENTER_X, center.x);
-    		state.putFloat(CENTER_Y, center.y);
+    	
+    	if (map.getLayer() != null) {
+    		Point2D center = new Point2D(map.getCenter().x, map.getCenter().y);
+    		Point2D wgs84Center = new Point2D();
+    		Projection proj = map.getLayer().getProjection();
+    		proj.inverseTransform(center, wgs84Center);
+    		state.putFloat(CENTER_X, (float) wgs84Center.x);
+    		state.putFloat(CENTER_Y, (float) wgs84Center.y);
     	}
     	state.commit();
     }
@@ -184,12 +181,16 @@ public class Main extends Activity implements SensorEventListener {
     	float centerY = mapState.getFloat(CENTER_Y, Float.MIN_VALUE);
     	
     	if (layerId < layers.size()) {
-    		map.setLayer(layers.get(layerId));
+    		TmsLayer layer = layers.get(layerId); 
+    		map.setLayer(layer);
+    		if (centerX != Float.MIN_VALUE) {
+    			Point2D wgs84Center = new Point2D(centerX, centerY);
+    			Point2D center = new Point2D();
+    			layer.getProjection().transform(wgs84Center, center);
+        		map.setCenter((float) center.x, (float) center.y);
+        	}
     	}
     	map.setZoom(zoom);
-    	if (centerX != Float.MIN_VALUE) {
-    		map.setCenter(centerX, centerY);
-    	}
     }
     
     @Override
