@@ -6,6 +6,6 @@
 	   android:alphabeticShortcut="@string/layers_shortcut" />
    <item android:id="@+id/settings"
 	   android:title="@string/settings_label"
-	   android:alphabeticShortcut="@string/settings_shortcut" />
-
+	   android:alphabeticShortcut="@string/settings_shortcut"
+	   android:icon="@android:drawable/ic_menu_manage" />
 </menu>
