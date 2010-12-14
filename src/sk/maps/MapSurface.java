@@ -60,6 +60,14 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		return mapThread.getZoomLevel();
 	}
 	
+	public PointF getCenter() {
+		throw new UnsupportedOperationException();
+	}
+	
+	public void setCenter(float x, float y) {
+		throw new UnsupportedOperationException();
+	}
+	
 	public void setZoom(int zoom) {
 		mapThread.setZoom(zoom);
 	}

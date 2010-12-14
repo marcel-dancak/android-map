@@ -101,6 +101,19 @@ public class Map extends View implements TileListener, MapView {
 		}
 	}
 
+	public PointF getCenter() {
+		return center;
+	}
+	
+	public void setCenter(float x, float y) {
+		if (center != null) {
+			center.x = x;
+			center.y = y;
+		} else {
+			center = new PointF(x, y);
+		}
+	}
+	
 	private int size;
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {

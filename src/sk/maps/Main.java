@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.DataSetObserver;
+import android.graphics.PointF;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -50,6 +51,13 @@ public class Main extends Activity implements SensorEventListener {
 	
 	static final int DIALOG_LAYERS_ID = 0;
 
+	static final String ZOOM = "map_zoom";
+	static final String LAYER_ID = "layer_id";
+	static final String CENTER_X = "center_x";
+	static final String CENTER_Y = "center_y";
+	
+	private int layerId;
+	
 	private SensorManager sensorManager;
 	private MapView map;
 	private Button zoomIn;
@@ -66,8 +74,9 @@ public class Main extends Activity implements SensorEventListener {
         loadLayersConfig();
         
         TmsLayer layer = null;
-        if (layers.size() > 0) {
-        	layer = layers.get(0);
+        // set first layer if it's application startup (savedInstanceState is null) and there are some available layers
+        if (savedInstanceState == null && layerId < layers.size()){
+        	layer = layers.get(layerId);
         } else {
         	//startActivity(new Intent(this, Settings.class));
         }
@@ -112,7 +121,7 @@ public class Main extends Activity implements SensorEventListener {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         //sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_UI);
     }
-
+    
     @Override
     protected void onResume() {
     	Log.i(TAG, "onResume");
@@ -122,6 +131,38 @@ public class Main extends Activity implements SensorEventListener {
     		loadLayersConfig();
     	}
     }
+    
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    	Log.i(TAG, "Save State");
+    	super.onSaveInstanceState(outState);
+    	outState.putInt(LAYER_ID, layerId);
+    	outState.putInt(ZOOM, map.getZoom());
+    	PointF center = map.getCenter();
+    	if (center != null) {
+    		outState.putFloat(CENTER_X, center.x);
+    		outState.putFloat(CENTER_Y, center.y);
+    	}
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    	Log.i(TAG, "onRestoreInstanceState");
+    	super.onRestoreInstanceState(savedInstanceState);
+    	layerId = savedInstanceState.getInt(LAYER_ID);
+    	int zoom = savedInstanceState.getInt(ZOOM, 1);
+    	float centerX = savedInstanceState.getFloat(CENTER_X, Float.MIN_VALUE);
+    	float centerY = savedInstanceState.getFloat(CENTER_Y, Float.MIN_VALUE);
+    	
+    	if (layerId < layers.size()) {
+    		map.setLayer(layers.get(layerId));
+    	}
+    	map.setZoom(zoom);
+    	if (centerX != Float.MIN_VALUE) {
+    		map.setCenter(centerX, centerY);
+    	}
+    }
+    
     
     @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -154,38 +195,22 @@ public class Main extends Activity implements SensorEventListener {
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
 					System.out.println(which);
-					map.setLayer(layers.get(which));
+					layerId = which;
+					map.setLayer(layers.get(layerId));
 				}
 			};
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select Layer");
-			/*
-			builder.setMultiChoiceItems(new String[] { "Presov", "Kosice", "2", "3"},
-					new boolean[] {true, true, false, false}, new DialogInterface.OnMultiChoiceClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-						}
-					});
-			*/
-			//builder.setSingleChoiceItems(new String[] { "Presov", "Kosice", "2", "3"}, 0, listener);
+
 			String[] items = new String[layers.size()];
 			for (int i = 0; i < layers.size(); i++) {
 				items[i] = layers.get(i).getTitle();
 			}
 			Log.i(TAG, "create dialog (layers "+layers.size());
-			//builder.setItems(new String[] { "Presov", "Kosice", "2", "3"}, listener);
 			builder.setItems(items, listener);
 			
 			AlertDialog layersDialog = builder.create();
 			/*
-			dialog.setButton("button", new DialogInterface.OnClickListener() {
-
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					// TODO Auto-generated method stub
-
-				}
-			});
 			layersDialog.getListView().setSelector(R.drawable.selector);
 			layersDialog.getListView().setSelection(1);
 			
@@ -220,9 +245,9 @@ public class Main extends Activity implements SensorEventListener {
 			for (int i = 0; i < layers.size(); i++) {
 				items[i] = layers.get(i).getTitle();
 			}
-			int cuurrent = layers.indexOf(map.getLayer());
-			if (cuurrent != -1) {
-				items[cuurrent] = "> "+items[cuurrent];
+			
+			if (layerId >= 0 && layerId < items.length) {
+				items[layerId] = "> "+items[layerId];
 			}
 			ListView list = layersDialog.getListView();
 			list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
