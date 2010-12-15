@@ -116,7 +116,7 @@ public class TmsLayer extends Layer {
 	private final void process(Tile tile) {
 		URL url;
 		try {
-			String query = format("/1.0.0/%s/%d/%d/%d.%s", name, tile.getZoomLevel()-1, tile.getX(), tile.getY(), format);
+			String query = format("/1.0.0/%s/%d/%d/%d.%s", name, tile.getZoomLevel(), tile.getX(), tile.getY(), format);
 			url = new URL(serverUrl+"/"+query);
 			//Log.i(TAG, url.toString());
 			//System.out.println(url.toString());
@@ -191,7 +191,7 @@ public class TmsLayer extends Layer {
 			public void run() {
 				URL url;
 				try {
-					String query = format("/1.0.0/%s/%d/%d/%d.%s", name, zoom-1, x, y, format);
+					String query = format("/1.0.0/%s/%d/%d/%d.%s", name, zoom, x, y, format);
 					url = new URL(serverUrl+"/"+query);
 					//Log.i(TAG, url.toString());
 					HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
@@ -250,7 +250,7 @@ public class TmsLayer extends Layer {
 			URL url;
 			Bitmap image = null;
 			try {
-				String query = format("/1.0.0/%s/%d/%d/%d.%s", layer.name, tile.getZoomLevel()-1, tile.getX(), tile.getY(), layer.format);
+				String query = format("/1.0.0/%s/%d/%d/%d.%s", layer.name, tile.getZoomLevel(), tile.getX(), tile.getY(), layer.format);
 				url = new URL(layer.serverUrl+"/"+query);
 				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
 				InputStream is = httpCon.getInputStream();

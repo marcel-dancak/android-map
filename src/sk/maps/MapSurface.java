@@ -190,7 +190,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		}
 		
 		public void setZoom(int zoom) {
-			if (zoom > 0) {
+			if (zoom >= 0) {
 				int oldZoom = this.zoom;
 				this.zoom = zoom;
 				onZoomChange(oldZoom, zoom);
@@ -467,8 +467,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		}
 
 		private float getResolution() {
-			//return 1.125f / zoom;
-			return (float) resolutions[zoom-1];
+			return (float) resolutions[zoom];
 		}
 
 		@Override

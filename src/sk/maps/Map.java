@@ -32,7 +32,7 @@ public class Map extends View implements TileListener, MapView {
 
 	private PointF center;
 	private BBox bbox;
-	private int zoom = -1;
+	private int zoom = 1;
 	private int heading;
 	
 	private float tileWidth;
@@ -96,7 +96,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	public void setZoom(int zoom) {
-		if (zoom > 0 && zoom < tmsLayer.getResolutions().length) {
+		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
 			int oldZoom = this.zoom;
 			this.zoom = zoom;
 			onZoomChange(oldZoom, zoom);
@@ -405,7 +405,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	public final float getResolution() {
-		return (float) tmsLayer.getResolutions()[zoom-1];
+		return (float) tmsLayer.getResolutions()[zoom];
 	}
 
 	@Override

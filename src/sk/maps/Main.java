@@ -37,6 +37,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -77,6 +78,8 @@ public class Main extends Activity implements SensorEventListener {
         
         map = new Map(this, null);
         //map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
+        //zoomIn = new ImageButton(this);
+        //zoomIn.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_menu_zoom));
         zoomIn = new Button(this);
         zoomIn.setText("+");
         zoomIn.setFocusable(false);
@@ -177,7 +180,7 @@ public class Main extends Activity implements SensorEventListener {
     
     private void restoreState() {
     	layerId = mapState.getInt(LAYER_ID, 0);
-    	int zoom = mapState.getInt(ZOOM, 1);
+    	int zoom = mapState.getInt(ZOOM, 0);
     	float centerX = mapState.getFloat(CENTER_X, Float.MIN_VALUE);
     	float centerY = mapState.getFloat(CENTER_Y, Float.MIN_VALUE);
     	
@@ -190,8 +193,8 @@ public class Main extends Activity implements SensorEventListener {
     			layer.getProjection().transform(wgs84Center, center);
         		map.setCenter((float) center.x, (float) center.y);
         	}
+    		map.setZoom(zoom);
     	}
-    	map.setZoom(zoom);
     }
     
     @Override
