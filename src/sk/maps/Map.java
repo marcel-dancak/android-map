@@ -15,6 +15,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -56,8 +57,26 @@ public class Map extends View implements TileListener, MapView {
 	private TmsVisualDebugger visualDebugger;
 	private boolean isMooving;
 	
+	public Map(Context context) {
+		super(context);
+		postInit();
+	}
+	
+	public Map(Context context, AttributeSet attrs) {
+		super(context, attrs);
+		postInit();
+	}
+	
 	public Map(Context context, TmsLayer layer) {
 		super(context);
+		postInit();
+
+		if (layer != null) {
+			setLayer(layer);
+		}
+	}
+
+	private void postInit() {
 		imagesStyle = new Paint();
 		imagesStyle.setFilterBitmap(true);
 		
@@ -73,13 +92,9 @@ public class Map extends View implements TileListener, MapView {
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 		screenBorderStyle2 = new Paint(screenBorderStyle);
-		screenBorderStyle2.setColor(Color.rgb(150, 30, 50));
-
-		if (layer != null) {
-			setLayer(layer);
-		}
+		screenBorderStyle2.setColor(Color.rgb(150, 30, 50));	
 	}
-
+	
 	public void setLayer(TmsLayer layer) {
 		clearTiles();
 		tmsLayer = layer;

@@ -1,12 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-<TextView  
-    android:layout_width="fill_parent" 
-    android:layout_height="wrap_content" 
-    android:text="@string/hello"
-    />
+<sk.maps.Map
+	android:id="@+id/map"
+	android:layout_width="fill_parent" 
+	android:layout_height="wrap_content"
+/>
+
+<LinearLayout
+	android:layout_height="wrap_content"
+	android:layout_width="wrap_content"
+
+	android:layout_alignParentRight="true"
+	android:layout_alignParentTop="true" >
+	<Button
+		android:id="@+id/zoom_out"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="-"
+		/>
+	<Button
+		android:id="@+id/zoom_in"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="+"
+		/>
 </LinearLayout>
+</RelativeLayout>

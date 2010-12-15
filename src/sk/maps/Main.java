@@ -31,6 +31,7 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -76,13 +77,11 @@ public class Main extends Activity implements SensorEventListener {
         
         mapState = getSharedPreferences("MAP_STATE", MODE_PRIVATE);
         
-        map = new Map(this, null);
-        //map = new MapSurface(this, layer.getBoundingBox(), layer.getResolutions(), layer);
-        //zoomIn = new ImageButton(this);
-        //zoomIn.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_menu_zoom));
-        zoomIn = new Button(this);
-        zoomIn.setText("+");
-        zoomIn.setFocusable(false);
+        setContentView(R.layout.main);
+        map = (Map) findViewById(R.id.map);
+        zoomIn = (Button) findViewById(R.id.zoom_in);
+        zoomOut = (Button) findViewById(R.id.zoom_out);
+        
         zoomIn.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
@@ -91,9 +90,6 @@ public class Main extends Activity implements SensorEventListener {
 			}
 		});
         
-        zoomOut = new Button(this);
-        zoomOut.setText("-");
-        zoomOut.setFocusable(false);
         zoomOut.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
@@ -103,17 +99,6 @@ public class Main extends Activity implements SensorEventListener {
 				}
 			}
 		});
-        
-        RelativeLayout layout = new RelativeLayout(this);
-        LinearLayout zoomControls = new LinearLayout(this);
-        zoomControls.addView(zoomOut);
-        zoomControls.addView(zoomIn);
-        
-        layout.addView((View) map);
-        //layout.addView(mapSurface);
-        layout.addView(zoomControls);
-        setContentView(layout);
-        //setContentView(map);
         
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         //sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_UI);
@@ -343,10 +328,10 @@ public class Main extends Activity implements SensorEventListener {
 				tmsLayer.setTitle(title);
 				layers.add(tmsLayer);
 				
-				Log.i(TAG, "Title: "+title);
-				Log.i(TAG, "URL: "+url);
-				Log.i(TAG, "Extension: "+extension);
-				Log.i(TAG, "Projection: "+srs);
+				Log.d(TAG, "Title: "+title);
+				Log.d(TAG, "URL: "+url);
+				Log.d(TAG, "Extension: "+extension);
+				Log.d(TAG, "Projection: "+srs);
 			}
 			
 		} catch (IOException e) {
