@@ -8,6 +8,8 @@ import java.util.TimerTask;
 import static java.lang.String.format;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -58,6 +60,7 @@ public class Map extends View implements TileListener, MapView {
 	private Paint mapStyle;
 	private Paint screenBorderStyle;
 	private Paint screenBorderStyle2;
+	private Paint whiteStyle;
 	
 	private Timer animTimer = new Timer();
 	private TmsVisualDebugger visualDebugger;
@@ -98,7 +101,10 @@ public class Map extends View implements TileListener, MapView {
 		screenBorderStyle.setColor(Color.argb(255, 20, 40, 120));
 
 		screenBorderStyle2 = new Paint(screenBorderStyle);
-		screenBorderStyle2.setColor(Color.rgb(150, 30, 50));	
+		screenBorderStyle2.setColor(Color.rgb(150, 30, 50));
+		
+		whiteStyle = new Paint();
+		whiteStyle.setColor(Color.WHITE);
 	}
 	
 	public void setLayer(TmsLayer layer) {
@@ -110,6 +116,7 @@ public class Map extends View implements TileListener, MapView {
 		tmsLayer.addTileListener(this);
 		visualDebugger = new TmsVisualDebugger(this);
 		//setZoom(1);
+		onZoomChange(zoom, zoom);
 	}
 	
 	public int getZoom() {
@@ -149,6 +156,9 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.i(TAG, format("width: %d height: %d", w, h));
+		if (zoomBackground != null) {
+			zoomBackground.recycle();
+		}
 		size = (int) Math.ceil(Math.sqrt(w*w+h*h));
 		width = w;
 		height = h;
@@ -188,6 +198,9 @@ public class Map extends View implements TileListener, MapView {
 	private boolean wasZoom;
 	private float startDistance;
 	private float zoomPinch = 1f;
+	private Bitmap zoomBackground;
+	private boolean showZoomBackground;
+	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (tmsLayer == null) {
@@ -222,6 +235,7 @@ public class Map extends View implements TileListener, MapView {
 			break;
 		case MotionEvent.ACTION_DOWN:
 			wasZoom = false;
+			showZoomBackground = false;
 			/*
 			Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
 					tiles.size(),
@@ -253,7 +267,7 @@ public class Map extends View implements TileListener, MapView {
 			// for the case when event with ACTION_POINTER_UP action didn't occurred
 			if (wasZoom) {
 				// TODO: check that tmsLayer is not null
-				onZoomPinchEnd();
+				//onZoomPinchEnd();
 			}
 			
 			animTimer.cancel();
@@ -323,7 +337,12 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		//Log.i(TAG, "zoomPinch="+zoomPinch);
-		canvas.drawRGB(255, 255, 255);
+		canvas.drawARGB(255, 255, 255, 255);
+		if (showZoomBackground) {
+			//Log.i(TAG, "drawing background");
+			canvas.drawBitmap(zoomBackground, 0, 0, null);
+			//return;
+		}
 		if (tmsLayer == null) {
 			return;
 		}
@@ -331,12 +350,13 @@ public class Map extends View implements TileListener, MapView {
 		canvas.scale(1, -1);
 		canvas.translate(0, -height);
 		float scale = 0.5f;
+		//canvas.save();
 		canvas.scale(zoomPinch, zoomPinch, width / 2f, height / 2f);
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		//canvas.rotate(-heading, width/2f, height/2f);
 		
 		//canvas.drawLine(0, 0, 20, 10, screenBorderStyle);
-
+		
 		PointF startP = mapToScreen(bbox.minX, bbox.minY);
 		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
 		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
@@ -371,7 +391,11 @@ public class Map extends View implements TileListener, MapView {
 		
 		neededTiles.clear();
 		long t1 = System.currentTimeMillis();
-		//Log.i(TAG, format("sx=%d sy=%d firstTileX=%d firstTileY=%d", sx, sy, firstTileX, firstTileY));
+		
+		//Log.i(TAG, format("bbox=%f, %f, %f, %f center=%f, %f", bbox.minX, bbox.minY, bbox.maxX, bbox.maxY, center.x, center.y));
+		//Log.i(TAG, format("firstTileX=%d firstTileY=%d", firstTileX, firstTileY));
+		// TODO: check that firstTileX/Y and lastTileX/Y aren't too high (when onZoomChange() or something like that
+		// wasn't called)
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
 				String tileKey = tileKey(x, y);
@@ -387,6 +411,9 @@ public class Map extends View implements TileListener, MapView {
 				if (tile.getImage() != null) {
 					float left = fixedPointOnScreen.x+(256*(x-firstTileX));
 					float bottom = fixedPointOnScreen.y+(y-firstTileY)*256;
+					if (showZoomBackground) {
+						canvas.drawRect(left, bottom, left+256, bottom+256, whiteStyle);
+					}
 					canvas.scale(1, -1, left, bottom+128);
 					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
 					//visualDebugger.drawTile(canvas, x, y);
@@ -394,6 +421,7 @@ public class Map extends View implements TileListener, MapView {
 				}
 			}
 		}
+		
 		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
 		t1 = System.currentTimeMillis();
 		//for (Tile tile : neededTiles) {
@@ -422,6 +450,7 @@ public class Map extends View implements TileListener, MapView {
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
+		//canvas.restore();
 		
 		Point2D p2 = new Point2D();
 		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p2);
@@ -552,18 +581,18 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	private void onZoomPinchEnd() {
+		
 		final int closestZoomLevel = getClosestZoomLevel(zoomPinch);
 		final float endZoomPinch = (float) (tmsLayer.getResolutions()[zoom]/tmsLayer.getResolutions()[closestZoomLevel]);
 		Log.i(TAG, "actual zoom pinch: "+zoomPinch +" calculated: "+endZoomPinch);
 		
 		
 		final float startZoomPinch = zoomPinch;
-		MyAnimation animation = new MyAnimation(500, 6);
+		MyAnimation animation = new MyAnimation(300, 5);
 		animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
 			
 			@Override
 			public void onFrame(final float fraction) {
-				
 				Log.i(TAG, "my animation "+fraction);
 				post(new Runnable() {
 					
@@ -573,18 +602,30 @@ public class Map extends View implements TileListener, MapView {
 						invalidate();
 					}
 				});
-				
 			}
 			
 			@Override
 			public void onEnd() {
 				Log.i(TAG, "onEnd");
+				
 				post(new Runnable() {
 					
 					@Override
 					public void run() {
+						if (zoomBackground == null) {
+							Log.i(TAG, "createBackgroundImage "+width+" x "+height);
+							zoomBackground = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+						}
+						
+						Canvas canvas = new Canvas(zoomBackground);
+						showZoomBackground = false;
+						//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
+						onDraw(canvas);
+						
 						zoomPinch = 1f;
+						showZoomBackground = true;
 						setZoom(closestZoomLevel);
+						invalidate();
 					}
 				});
 			}

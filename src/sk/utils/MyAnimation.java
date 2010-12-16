@@ -40,6 +40,7 @@ public class MyAnimation extends TimerTask {
 		} else {
 			timer.cancel();
 			if (listener != null) {
+				listener.onFrame(1);
 				listener.onEnd();
 			}
 		}
