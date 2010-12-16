@@ -201,6 +201,8 @@ public class Map extends View implements TileListener, MapView {
 	private Bitmap zoomBackground;
 	private boolean showZoomBackground;
 	
+	//private Matrix overlayMatrix;
+	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (tmsLayer == null) {
@@ -234,8 +236,8 @@ public class Map extends View implements TileListener, MapView {
 			//wasZoom = false;
 			break;
 		case MotionEvent.ACTION_DOWN:
-			wasZoom = false;
-			showZoomBackground = false;
+			//wasZoom = false;
+			//showZoomBackground = false;
 			/*
 			Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
 					tiles.size(),
@@ -269,10 +271,10 @@ public class Map extends View implements TileListener, MapView {
 				// TODO: check that tmsLayer is not null
 				//onZoomPinchEnd();
 			}
-			
 			animTimer.cancel();
 			animTimer = new Timer();
 			isMooving = false;
+			wasZoom = false;
 			break;
 		case MotionEvent.ACTION_MOVE:
 			//Log.i(TAG, "ACTION_MOVE "+event.getPointerCount());
@@ -350,7 +352,7 @@ public class Map extends View implements TileListener, MapView {
 		canvas.scale(1, -1);
 		canvas.translate(0, -height);
 		float scale = 0.5f;
-		//canvas.save();
+		canvas.save();
 		canvas.scale(zoomPinch, zoomPinch, width / 2f, height / 2f);
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		//canvas.rotate(-heading, width/2f, height/2f);
@@ -396,6 +398,7 @@ public class Map extends View implements TileListener, MapView {
 		//Log.i(TAG, format("firstTileX=%d firstTileY=%d", firstTileX, firstTileY));
 		// TODO: check that firstTileX/Y and lastTileX/Y aren't too high (when onZoomChange() or something like that
 		// wasn't called)
+		int notAvailableTiles = 0;
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
 				String tileKey = tileKey(x, y);
@@ -418,10 +421,14 @@ public class Map extends View implements TileListener, MapView {
 					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
 					//visualDebugger.drawTile(canvas, x, y);
 					canvas.scale(1, -1, left, bottom+128);
+				} else {
+					notAvailableTiles++;
 				}
 			}
 		}
-		
+		if (notAvailableTiles == 0) {
+			showZoomBackground = false;
+		}
 		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
 		t1 = System.currentTimeMillis();
 		//for (Tile tile : neededTiles) {
@@ -450,7 +457,7 @@ public class Map extends View implements TileListener, MapView {
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
-		//canvas.restore();
+		canvas.restore();
 		
 		Point2D p2 = new Point2D();
 		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p2);
@@ -507,7 +514,13 @@ public class Map extends View implements TileListener, MapView {
 	public final PointF mapToScreenAligned(float x, float y) {
 		float positionOffsetX = x - fixedPointOnMap.x;
 		float positionOffsetY = y - fixedPointOnMap.y;
-		return new PointF(fixedPointOnScreen.x+positionOffsetX/getResolution(), fixedPointOnScreen.y+positionOffsetY/getResolution());
+		float tx = fixedPointOnScreen.x+positionOffsetX/getResolution();
+		float ty = fixedPointOnScreen.y+positionOffsetY/getResolution();
+		Matrix m = new Matrix();
+		m.postScale(zoomPinch, zoomPinch, width/2f, height/2f);
+		float[] pos = new float[] {tx, ty};
+		m.mapPoints(pos);
+		return new PointF(pos[0], pos[1]);
 	}
 	
 	public final float getResolution() {
