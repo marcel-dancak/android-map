@@ -339,7 +339,7 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		//Log.i(TAG, "zoomPinch="+zoomPinch);
-		canvas.drawARGB(255, 255, 255, 255);
+		canvas.drawRGB(255, 255, 255);
 		if (showZoomBackground) {
 			//Log.i(TAG, "drawing background");
 			canvas.drawBitmap(zoomBackground, 0, 0, null);
@@ -357,15 +357,9 @@ public class Map extends View implements TileListener, MapView {
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		//canvas.rotate(-heading, width/2f, height/2f);
 		
-		//canvas.drawLine(0, 0, 20, 10, screenBorderStyle);
-		
 		PointF startP = mapToScreen(bbox.minX, bbox.minY);
 		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
 		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
-		
-
-		//canvas.drawRect(startP.x, startP.y, startP.x+256, startP.y+256, screenBorderStyle);
-		// Log.d(TAG, format("first tile [%f, %f]", startP.x, startP.y));
 		
 		PointF o = screenToMap(0, 0);
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
@@ -373,8 +367,6 @@ public class Map extends View implements TileListener, MapView {
 		}
 		Point s = getTileAtScreen(0, 0);
 		Point e = getTileAtScreen(width, height);
-		//Point s = getTileAtScreen(-(size-width)/2, -(size-height)/2);
-		//Point e = getTileAtScreen(width+(size-width)/2, height+(size-height)/2);
 		
 		//Log.i(TAG, format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x, s.y, e.x, e.y));
 		int lastTileX = (int) ((bbox.maxX - bbox.minX) / tileWidth);
@@ -431,29 +423,11 @@ public class Map extends View implements TileListener, MapView {
 		}
 		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
 		t1 = System.currentTimeMillis();
-		//for (Tile tile : neededTiles) {
-			//tmsLayer.requestTile(tile);
-			//tiles.put(tileKey(tile.getX(), tile.getY()), tile);
-		//}
 		if (neededTiles.size() > 0) {
 			//tmsLayer.requestTiles(neededTiles);
 			//tmsLayer.requestTilesAsync(neededTiles);
 			tmsLayer.requestTiles2(neededTiles);
 		}
-		/*
-		for (int x = firstTileX; x <= lastTileX; x++) {
-			for (int y = firstTileY; y <= lastTileY; y++) {
-				String tileKey = tileKey(x, y);
-				if (!tiles.containsKey(tileKey)) {
-					//tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
-					Tile tile = new Tile(x, y, zoom, null);
-					//System.out.println("need a tile");
-					tmsLayer.requestTile(tile);
-					tiles.put(tileKey, tile);
-				}
-			}
-		}
-		*/
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
