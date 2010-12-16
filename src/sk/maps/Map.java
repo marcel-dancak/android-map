@@ -112,6 +112,9 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	public void setZoom(int zoom) {
+		if (this.zoom == zoom) {
+			return;
+		}
 		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
 			int oldZoom = this.zoom;
 			this.zoom = zoom;
@@ -207,7 +210,10 @@ public class Map extends View implements TileListener, MapView {
 			break;
 		case MotionEvent.ACTION_POINTER_UP:
 			Log.i(TAG, "1 Finger");
-			
+			int closestZoomLevel = getClosestZoomLevel(zoomPinch);
+			setZoom(closestZoomLevel);
+			zoomPinch = 1f;
+			wasZoom = false;
 			break;
 		case MotionEvent.ACTION_DOWN:
 			wasZoom = false;
@@ -240,12 +246,18 @@ public class Map extends View implements TileListener, MapView {
 			break;
 		case MotionEvent.ACTION_UP:
 			if (wasZoom) {
-				
+				// TODO: check that tmsLayer is not null
+				closestZoomLevel = getClosestZoomLevel(zoomPinch);
+				setZoom(closestZoomLevel);
+				zoomPinch = 1f;
+				/*
 				if (zoomPinch > 2) {
 					setZoom(zoom+1);
 				} else if (zoomPinch < 0.5f) {
 					setZoom(zoom-1);
 				}
+				*/
+				Log.i(TAG, "zoom pinch: "+zoomPinch + " closest zoom: "+closestZoomLevel);
 				zoomPinch = 1.0f;
 			}
 			
@@ -528,6 +540,23 @@ public class Map extends View implements TileListener, MapView {
 		return x+":"+y;
 	}
 
+	private int getClosestZoomLevel(double newZoom) {
+		double newResolution = tmsLayer.getResolutions()[zoom]/newZoom;
+		double closestResolutionDistance = tmsLayer.getResolutions()[0];
+		int indexOfClosestResolution = 0;
+		
+		for (int i = 0 ; i < tmsLayer.getResolutions().length; i++) {
+		//for (double res : tmsLayer.getResolutions()) {
+			double resolution = tmsLayer.getResolutions()[i];
+			double distance = Math.abs(resolution-newResolution);
+			if (distance < closestResolutionDistance) {
+				closestResolutionDistance = distance;
+				indexOfClosestResolution = i;
+			}
+		}
+		return indexOfClosestResolution;
+	}
+	
 	@Override
 	public void setHeading(int heading) {
 		this.heading = heading;
