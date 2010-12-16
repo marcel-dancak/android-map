@@ -225,13 +225,11 @@ public class Map extends View implements TileListener, MapView {
 			float y2 = event.getY(1);
 			//startDistance = Utils.distance(x, y, event.getX(1), height-event.getY(1));
 			startDistance = Utils.distance(x1, y1, x2, y2);
-			
-			Log.i(TAG, "2 Fingers, start distance: "+startDistance);
+			//Log.i(TAG, "2 Fingers, start distance: "+startDistance);
 			break;
 		case MotionEvent.ACTION_POINTER_UP:
-			Log.i(TAG, "1 Finger");
+			//Log.i(TAG, "1 Finger");
 			onZoomPinchEnd();
-			
 			
 			//wasZoom = false;
 			break;
@@ -326,7 +324,7 @@ public class Map extends View implements TileListener, MapView {
 				if (possibleZoomPinch < 1 && zoom > 0) {
 					zoomPinch = possibleZoomPinch;
 				}
-				Log.i(TAG, "2 Fingers, distance: "+distance + " zoom "+zoomPinch);
+				//Log.i(TAG, "2 Fingers, distance: "+distance + " zoom "+zoomPinch);
 			}
 			break;
 		}
@@ -401,7 +399,9 @@ public class Map extends View implements TileListener, MapView {
 					//tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
 					tile = new Tile(x, y, zoom, null);
 					tiles.put(tileKey, tile);
-					neededTiles.add(tile);
+					if (zoomPinch == 1f) {
+						neededTiles.add(tile);
+					}
 				}
 				if (tile.getImage() != null) {
 					float left = fixedPointOnScreen.x+(256*(x-firstTileX));
@@ -464,16 +464,17 @@ public class Map extends View implements TileListener, MapView {
 	}
 
 	public final PointF screenToMap(float x, float y) {
-		/*
+		
 		Matrix m = new Matrix();
-		m.postRotate(heading, width/2f, height/2f);
+		//m.postRotate(heading, width/2f, height/2f);
+		m.postScale(1f/zoomPinch, 1f/zoomPinch, width/2f, height/2f);
 		float[] pos = new float[] {x, y};
 		m.mapPoints(pos);
 		float offsetX = pos[0] - width / 2f;
 		float offsetY = pos[1] - height / 2f;
-		*/
-		float offsetX = x - width / 2f;
-		float offsetY = y - height / 2f;
+		
+		//float offsetX = x - width / 2f;
+		//float offsetY = y - height / 2f;
 		return new PointF(center.x + offsetX * getResolution(), center.y + offsetY
 				* getResolution());
 	}
@@ -571,7 +572,7 @@ public class Map extends View implements TileListener, MapView {
 		
 		final int closestZoomLevel = getClosestZoomLevel(zoomPinch);
 		final float endZoomPinch = (float) (tmsLayer.getResolutions()[zoom]/tmsLayer.getResolutions()[closestZoomLevel]);
-		Log.i(TAG, "actual zoom pinch: "+zoomPinch +" calculated: "+endZoomPinch);
+		//Log.i(TAG, "actual zoom pinch: "+zoomPinch +" calculated: "+endZoomPinch);
 		
 		
 		final float startZoomPinch = zoomPinch;
@@ -580,7 +581,7 @@ public class Map extends View implements TileListener, MapView {
 			
 			@Override
 			public void onFrame(final float fraction) {
-				Log.i(TAG, "my animation "+fraction);
+				//Log.i(TAG, "my animation "+fraction);
 				post(new Runnable() {
 					
 					@Override
