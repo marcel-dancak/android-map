@@ -20,11 +20,16 @@ import android.util.FloatMath;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.TranslateAnimation;
 
 import com.jhlabs.geom.Point2D;
 
 import sk.maps.Layer.Tile;
 import sk.maps.Layer.TileListener;
+import sk.utils.MyAnimation;
 import sk.utils.TmsVisualDebugger;
 import sk.utils.Utils;
 
@@ -210,10 +215,10 @@ public class Map extends View implements TileListener, MapView {
 			break;
 		case MotionEvent.ACTION_POINTER_UP:
 			Log.i(TAG, "1 Finger");
-			int closestZoomLevel = getClosestZoomLevel(zoomPinch);
-			setZoom(closestZoomLevel);
-			zoomPinch = 1f;
-			wasZoom = false;
+			onZoomPinchEnd();
+			
+			
+			//wasZoom = false;
 			break;
 		case MotionEvent.ACTION_DOWN:
 			wasZoom = false;
@@ -245,20 +250,10 @@ public class Map extends View implements TileListener, MapView {
 			
 			break;
 		case MotionEvent.ACTION_UP:
+			// for the case when event with ACTION_POINTER_UP action didn't occurred
 			if (wasZoom) {
 				// TODO: check that tmsLayer is not null
-				closestZoomLevel = getClosestZoomLevel(zoomPinch);
-				setZoom(closestZoomLevel);
-				zoomPinch = 1f;
-				/*
-				if (zoomPinch > 2) {
-					setZoom(zoom+1);
-				} else if (zoomPinch < 0.5f) {
-					setZoom(zoom-1);
-				}
-				*/
-				Log.i(TAG, "zoom pinch: "+zoomPinch + " closest zoom: "+closestZoomLevel);
-				zoomPinch = 1.0f;
+				onZoomPinchEnd();
 			}
 			
 			animTimer.cancel();
@@ -327,7 +322,7 @@ public class Map extends View implements TileListener, MapView {
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
-		Log.i(TAG, "zoomPinch="+zoomPinch);
+		//Log.i(TAG, "zoomPinch="+zoomPinch);
 		canvas.drawRGB(255, 255, 255);
 		if (tmsLayer == null) {
 			return;
@@ -546,7 +541,6 @@ public class Map extends View implements TileListener, MapView {
 		int indexOfClosestResolution = 0;
 		
 		for (int i = 0 ; i < tmsLayer.getResolutions().length; i++) {
-		//for (double res : tmsLayer.getResolutions()) {
 			double resolution = tmsLayer.getResolutions()[i];
 			double distance = Math.abs(resolution-newResolution);
 			if (distance < closestResolutionDistance) {
@@ -555,6 +549,73 @@ public class Map extends View implements TileListener, MapView {
 			}
 		}
 		return indexOfClosestResolution;
+	}
+	
+	private void onZoomPinchEnd() {
+		final int closestZoomLevel = getClosestZoomLevel(zoomPinch);
+		final float endZoomPinch = (float) (tmsLayer.getResolutions()[zoom]/tmsLayer.getResolutions()[closestZoomLevel]);
+		Log.i(TAG, "actual zoom pinch: "+zoomPinch +" calculated: "+endZoomPinch);
+		
+		
+		final float startZoomPinch = zoomPinch;
+		MyAnimation animation = new MyAnimation(500, 6);
+		animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
+			
+			@Override
+			public void onFrame(final float fraction) {
+				
+				Log.i(TAG, "my animation "+fraction);
+				post(new Runnable() {
+					
+					@Override
+					public void run() {
+						zoomPinch = startZoomPinch + (endZoomPinch-startZoomPinch)*fraction;
+						invalidate();
+					}
+				});
+				
+			}
+			
+			@Override
+			public void onEnd() {
+				Log.i(TAG, "onEnd");
+				post(new Runnable() {
+					
+					@Override
+					public void run() {
+						zoomPinch = 1f;
+						setZoom(closestZoomLevel);
+					}
+				});
+			}
+		});
+		animation.start();
+		/*
+		TranslateAnimation anim = new TranslateAnimation(0, 1, 0 ,1);
+		anim.setInterpolator(new LinearInterpolator());
+		anim.setDuration(1000);
+		anim.setRepeatCount(20);
+		
+		anim.setAnimationListener(new Animation.AnimationListener() {
+			
+			@Override
+			public void onAnimationStart(Animation animation) {
+				Log.i(TAG, "onAnimationStart");
+			}
+			
+			@Override
+			public void onAnimationRepeat(Animation animation) {
+				Log.i(TAG, "onAnimationRepeat");
+			}
+			
+			@Override
+			public void onAnimationEnd(Animation animation) {
+				Log.i(TAG, "onAnimationEnd");
+			}
+		});
+		Log.i(TAG, "start animation ... ");
+		anim.start();
+		*/
 	}
 	
 	@Override
