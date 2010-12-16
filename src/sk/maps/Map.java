@@ -16,6 +16,7 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.FloatMath;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -175,51 +176,86 @@ public class Map extends View implements TileListener, MapView {
 	private PointF fixedPointOnMap = new PointF();
 	private Point fixedPointOnScreen = new Point();
 	
+	// zoom
+	private boolean wasZoom;
+	private float startDistance;
+	private float zoomPinch = 1f;
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (tmsLayer == null) {
 			return false;
 		}
-		float x = event.getX();
-		float y = height-event.getY();
+		float x = event.getX(0);
+		float y = height-event.getY(0);
 		
-		if (event.getPointerCount() == 1) {
-			int action = event.getAction() & MotionEvent.ACTION_MASK;
-			switch (action) {
-			case MotionEvent.ACTION_DOWN:
-				/*
-				Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
-						tiles.size(),
-						Runtime.getRuntime().freeMemory()/1024,
-						Runtime.getRuntime().totalMemory()/1024,
-						Runtime.getRuntime().maxMemory()/1024));
-				*/
-				isMooving = true;
-				centerAtDragStart = new PointF(center.x, center.y);
-				dragStart = screenToMap(x, y);
-				dragStartPx = new PointF(x, y);
-				lastPos = screenToMap(x, y);
-				animTimer.schedule(new TimerTask() {
-					
-					@Override
-					public void run() {
-						post(new Runnable() {
-							
-							@Override
-							public void run() {
-								invalidate();
-							}
-						});
-					}
-				}, 30, 60);
+		
+		int action = event.getAction() & MotionEvent.ACTION_MASK;
+		switch (action) {
+		case MotionEvent.ACTION_POINTER_DOWN:
+			wasZoom = true;
+			//startPoint1 = new PointF(x, y);
+			//startPoint2 = new PointF(event.getX(1), height-event.getY(1));
+			//startPoint1.length(event.getX(1), height-event.getY(1));
+			float x1 = event.getX(0);
+			float y1 = event.getY(0);
+			float x2 = event.getX(1);
+			float y2 = event.getY(1);
+			//startDistance = Utils.distance(x, y, event.getX(1), height-event.getY(1));
+			startDistance = Utils.distance(x1, y1, x2, y2);
+			
+			Log.i(TAG, "2 Fingers, start distance: "+startDistance);
+			break;
+		case MotionEvent.ACTION_POINTER_UP:
+			Log.i(TAG, "1 Finger");
+			
+			break;
+		case MotionEvent.ACTION_DOWN:
+			wasZoom = false;
+			/*
+			Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
+					tiles.size(),
+					Runtime.getRuntime().freeMemory()/1024,
+					Runtime.getRuntime().totalMemory()/1024,
+					Runtime.getRuntime().maxMemory()/1024));
+			*/
+			isMooving = true;
+			centerAtDragStart = new PointF(center.x, center.y);
+			dragStart = screenToMap(x, y);
+			dragStartPx = new PointF(x, y);
+			lastPos = screenToMap(x, y);
+			animTimer.schedule(new TimerTask() {
 				
-				break;
-			case MotionEvent.ACTION_UP:
-				animTimer.cancel();
-				animTimer = new Timer();
-				isMooving = false;
-				break;
-			case MotionEvent.ACTION_MOVE:
+				@Override
+				public void run() {
+					post(new Runnable() {
+						
+						@Override
+						public void run() {
+							invalidate();
+						}
+					});
+				}
+			}, 30, 60);
+			
+			break;
+		case MotionEvent.ACTION_UP:
+			if (wasZoom) {
+				
+				if (zoomPinch > 2) {
+					setZoom(zoom+1);
+				} else if (zoomPinch < 0.5f) {
+					setZoom(zoom-1);
+				}
+				zoomPinch = 1.0f;
+			}
+			
+			animTimer.cancel();
+			animTimer = new Timer();
+			isMooving = false;
+			break;
+		case MotionEvent.ACTION_MOVE:
+			//Log.i(TAG, "ACTION_MOVE "+event.getPointerCount());
+			if (!wasZoom && event.getPointerCount() == 1) {
 				PointF dragPos2 = screenToMap2(x, y);
 				Matrix m = new Matrix();
 				m.postRotate(heading, lastPos.x, lastPos.y);
@@ -253,10 +289,25 @@ public class Map extends View implements TileListener, MapView {
 				center.offset(dragStart.x - pos[0], dragStart.y - pos[1]);
 				//center.offset(dragStart.x - dragPos.x, dragStart.y - dragPos.y);
 				//invalidate();
-				break;
+			} else {
+				x1 = event.getX(0);
+				y1 = event.getY(0);
+				x2 = event.getX(1);
+				y2 = event.getY(1);
+				//Log.i(TAG, "p1="+x1+","+y1+" p2="+x2+","+y2);
+				float distance = Utils.distance(x1, y1, x2, y2);
+				float possibleZoomPinch = distance/startDistance;
+				if (possibleZoomPinch > 1 && zoom < tmsLayer.getResolutions().length -1) {
+					zoomPinch = possibleZoomPinch;
+				}
+				if (possibleZoomPinch < 1 && zoom > 0) {
+					zoomPinch = possibleZoomPinch;
+				}
+				Log.i(TAG, "2 Fingers, distance: "+distance + " zoom "+zoomPinch);
 			}
+			break;
 		}
-		// Utils.dumpEvent(event);
+		//Utils.dumpEvent(event);
 		return true;
 	}
 
@@ -264,6 +315,7 @@ public class Map extends View implements TileListener, MapView {
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		Log.i(TAG, "zoomPinch="+zoomPinch);
 		canvas.drawRGB(255, 255, 255);
 		if (tmsLayer == null) {
 			return;
@@ -271,7 +323,8 @@ public class Map extends View implements TileListener, MapView {
 		//canvas.scale(1, -1, width / 2f, height / 2f);
 		canvas.scale(1, -1);
 		canvas.translate(0, -height);
-		float scale = 0.5f; 
+		float scale = 0.5f;
+		canvas.scale(zoomPinch, zoomPinch, width / 2f, height / 2f);
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		//canvas.rotate(-heading, width/2f, height/2f);
 		
@@ -280,7 +333,7 @@ public class Map extends View implements TileListener, MapView {
 		PointF startP = mapToScreen(bbox.minX, bbox.minY);
 		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
 		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
-		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
+		
 
 		//canvas.drawRect(startP.x, startP.y, startP.x+256, startP.y+256, screenBorderStyle);
 		// Log.d(TAG, format("first tile [%f, %f]", startP.x, startP.y));
@@ -360,6 +413,8 @@ public class Map extends View implements TileListener, MapView {
 		}
 		*/
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
+		
+		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 		
 		Point2D p2 = new Point2D();
 		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p2);

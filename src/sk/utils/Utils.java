@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import android.graphics.PointF;
 import android.util.Log;
 import android.view.MotionEvent;
 
@@ -63,5 +64,15 @@ public class Utils {
 		}
 		input.close();
 		return response;
+	}
+	
+	public static final float distance(PointF p1, PointF p2) {
+		return distance(p1.x, p1.y, p2.x, p2.y);
+	}
+	
+	public static final float distance(float x1, float y1, float x2, float y2) {
+		float dx = x1-x2;
+		float dy = y1-y2;
+		return (float) Math.sqrt(dx*dx + dy*dy);
 	}
 }
