@@ -94,7 +94,7 @@ public class Main extends Activity implements SensorEventListener {
 			
 			@Override
 			public void onClick(View v) {
-				if (map.getZoom() > 1) {
+				if (map.getZoom() > 0) {
 					map.setZoom(map.getZoom()-1);
 				}
 			}
@@ -168,7 +168,7 @@ public class Main extends Activity implements SensorEventListener {
     	int zoom = mapState.getInt(ZOOM, 0);
     	float centerX = mapState.getFloat(CENTER_X, Float.MIN_VALUE);
     	float centerY = mapState.getFloat(CENTER_Y, Float.MIN_VALUE);
-    	
+    	Log.i(TAG, "Restoring state: zoom="+zoom + " center="+centerX+", "+centerY);
     	if (layerId < layers.size()) {
     		TmsLayer layer = layers.get(layerId); 
     		map.setLayer(layer);
