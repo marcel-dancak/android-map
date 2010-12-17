@@ -1,10 +1,10 @@
-package sk.utils;
+package sk.gista.android.utils;
 
 import static java.lang.String.format;
-import sk.maps.BBox;
-import sk.maps.Layer.Tile;
-import sk.maps.Map;
-import sk.maps.TmsLayer;
+import sk.gista.android.maps.BBox;
+import sk.gista.android.maps.Map;
+import sk.gista.android.maps.TmsLayer;
+import sk.gista.android.maps.Layer.Tile;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;

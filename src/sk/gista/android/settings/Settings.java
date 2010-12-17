@@ -1,6 +1,6 @@
-package sk.gista.settings;
+package sk.gista.android.settings;
 
-import sk.maps.R;
+import sk.gista.android.maps.R;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 

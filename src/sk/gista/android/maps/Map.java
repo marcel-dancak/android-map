@@ -1,4 +1,4 @@
-package sk.maps;
+package sk.gista.android.maps;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,11 +29,11 @@ import android.view.animation.TranslateAnimation;
 
 import com.jhlabs.geom.Point2D;
 
-import sk.maps.Layer.Tile;
-import sk.maps.Layer.TileListener;
-import sk.utils.MyAnimation;
-import sk.utils.TmsVisualDebugger;
-import sk.utils.Utils;
+import sk.gista.android.maps.Layer.Tile;
+import sk.gista.android.maps.Layer.TileListener;
+import sk.gista.android.utils.MyAnimation;
+import sk.gista.android.utils.TmsVisualDebugger;
+import sk.gista.android.utils.Utils;
 
 public class Map extends View implements TileListener, MapView {
 

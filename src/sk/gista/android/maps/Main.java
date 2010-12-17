@@ -1,4 +1,4 @@
-package sk.maps;
+package sk.gista.android.maps;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,8 +12,8 @@ import com.jhlabs.geom.Point2D;
 import com.jhlabs.map.proj.Projection;
 import com.jhlabs.map.proj.ProjectionFactory;
 
-import sk.gista.settings.Settings;
-import sk.utils.Utils;
+import sk.gista.android.settings.Settings;
+import sk.gista.android.utils.Utils;
 
 import android.app.Activity;
 import android.app.AlertDialog;

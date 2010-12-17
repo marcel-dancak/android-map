@@ -1,4 +1,4 @@
-package sk.utils;
+package sk.gista.android.utils;
 
 import java.util.Timer;
 import java.util.TimerTask;

@@ -1,4 +1,4 @@
-package sk.maps;
+package sk.gista.android.maps;
 
 import static java.lang.String.format;
 
@@ -10,8 +10,8 @@ import com.jhlabs.geom.Point2D;
 import com.jhlabs.map.proj.Projection;
 import com.jhlabs.map.proj.ProjectionFactory;
 
-import sk.maps.Layer.Tile;
-import sk.maps.Layer.TileListener;
+import sk.gista.android.maps.Layer.Tile;
+import sk.gista.android.maps.Layer.TileListener;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

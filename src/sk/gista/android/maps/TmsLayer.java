@@ -1,4 +1,4 @@
-package sk.maps;
+package sk.gista.android.maps;
 
 import static java.lang.String.format;
 
@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import sk.maps.Layer.Tile;
+import sk.gista.android.maps.Layer.Tile;
 
 import com.jhlabs.map.proj.Projection;
 

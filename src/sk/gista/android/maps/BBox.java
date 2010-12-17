@@ -1,4 +1,4 @@
-package sk.maps;
+package sk.gista.android.maps;
 
 public class BBox {
 

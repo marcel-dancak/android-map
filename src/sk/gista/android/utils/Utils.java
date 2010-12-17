@@ -1,4 +1,4 @@
-package sk.utils;
+package sk.gista.android.utils;
 
 import java.io.BufferedReader;
 import java.io.File;

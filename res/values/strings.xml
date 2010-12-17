@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Hello World, Main!</string>
-    <string name="app_name">Maps</string>
+    <string name="app_name">Gisplan</string>
     <string name="layers_label">Layers</string>
     <string name="layers_shortcut">l</string>
     <string name="layers_prompt">Select layer</string>
