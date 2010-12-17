@@ -68,8 +68,10 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this );
 		locationManager.addGpsStatusListener(this);
 		
-		//currentLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-		currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+		currentLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+		if (currentLocation == null) {
+			currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+		}
 	}
 
 	@Override

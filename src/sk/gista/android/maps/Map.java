@@ -1,6 +1,7 @@
 package sk.gista.android.maps;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
@@ -609,11 +610,17 @@ public class Map extends View implements TileListener, MapView {
 						
 						Canvas canvas = new Canvas(zoomBackground);
 						showZoomBackground = false;
+						// draw map without overlays
+						List<Overlay> realOverlays = overlays;
+						overlays = Collections.emptyList();
 						//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
 						onDraw(canvas);
+						overlays = realOverlays;
 						
 						zoomPinch = 1f;
-						showZoomBackground = true;
+						if (zoom != closestZoomLevel) {
+							showZoomBackground = true;
+						}
 						setZoom(closestZoomLevel);
 						invalidate();
 					}
