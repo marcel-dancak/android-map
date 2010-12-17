@@ -127,7 +127,7 @@ public class Main extends Activity implements SensorEventListener {
     
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-    	Log.i(TAG, "Save State");
+    	Log.i(TAG, "Save temporary state");
     	super.onSaveInstanceState(outState);
     	if (layersSetting != null) {
     		//Log.i(TAG, "save layers list");
@@ -144,15 +144,22 @@ public class Main extends Activity implements SensorEventListener {
     }
     
     @Override
-    protected void onStop() {
-    	Log.i(TAG, "** onStop");
-    	super.onStop();
+    protected void onPause() {
+    	Log.i(TAG, "** onPause");
+    	super.onPause();
     	saveState();
     	map.onPause();
     	map.recycle();
     }
     
+    @Override
+    protected void onStop() {
+    	Log.i(TAG, "** onStop");
+    	super.onStop();
+    }
+    
     private void saveState() {
+    	Log.i(TAG, "Save perzistent state variables");
     	Editor state = mapState.edit();
     	state.putInt(LAYER_ID, layerId);
     	state.putInt(ZOOM, map.getZoom());
