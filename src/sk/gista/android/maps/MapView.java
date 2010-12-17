@@ -2,7 +2,7 @@ package sk.gista.android.maps;
 
 import android.graphics.PointF;
 
-public interface MapView {
+public interface MapView extends AndroidComponent {
 
 	void setZoom(int zoom);
 	int getZoom();
@@ -13,6 +13,9 @@ public interface MapView {
 	
 	PointF getCenter();
 	void setCenter(float x, float y);
+	
+	PointF mapToScreenAligned(float x, float y);
+	void addOverlay(Overlay overlay);
 	
 	void recycle();
 }

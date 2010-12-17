@@ -54,6 +54,7 @@ public class Map extends View implements TileListener, MapView {
 	//private List<Layer> layers = Collections.emptyList();
 	private TmsLayer tmsLayer;
 	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
+	private List<Overlay> overlays;
 	
 	// drawing styles
 	private Paint imagesStyle;
@@ -105,6 +106,8 @@ public class Map extends View implements TileListener, MapView {
 		
 		whiteStyle = new Paint();
 		whiteStyle.setColor(Color.WHITE);
+		
+		overlays = new ArrayList<Overlay>(1);
 	}
 	
 	public void setLayer(TmsLayer layer) {
@@ -344,7 +347,7 @@ public class Map extends View implements TileListener, MapView {
 			//return;
 		}
 		if (tmsLayer == null) {
-			return;
+			return; // TODO: and what about overlays ?
 		}
 		//canvas.scale(1, -1, width / 2f, height / 2f);
 		canvas.scale(1, -1);
@@ -361,7 +364,7 @@ public class Map extends View implements TileListener, MapView {
 		
 		PointF o = screenToMap(0, 0);
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
-			return;
+			return; // TODO: and what about overlays ?
 		}
 		Point s = getTileAtScreen(0, 0);
 		Point e = getTileAtScreen(width, height);
@@ -433,11 +436,10 @@ public class Map extends View implements TileListener, MapView {
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 		canvas.restore();
 		
-		Point2D p2 = new Point2D();
-		tmsLayer.getProjection().transform(new Point2D(21.23886386, 49.00096926), p2);
-		//Log.i(TAG, format("projected position: [%f, %f]", p2.x, p2.y));
-		PointF currentPos = mapToScreenAligned((float) p2.x, (float) p2.y);
-		canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, screenBorderStyle);
+		for (Overlay overlay : overlays) {
+			overlay.onDraw(this, canvas);
+		}
+
 		/*
 		canvas.drawRect(0, 0, width, height, screenBorderStyle2);
 		canvas.drawArc(new RectF(-3, -3, 3, 3), 0, 360, true, screenBorderStyle2);
@@ -647,9 +649,27 @@ public class Map extends View implements TileListener, MapView {
 		*/
 	}
 	
+	public void addOverlay(Overlay overlay) {
+		overlays.add(overlay);
+	}
+	
 	@Override
 	public void setHeading(int heading) {
 		this.heading = heading;
 		invalidate();
+	}
+
+	@Override
+	public void onPause() {
+		for (Overlay overlay : overlays) {
+			overlay.onPause();
+		}
+	}
+
+	@Override
+	public void onResume() {
+		for (Overlay overlay : overlays) {
+			overlay.onResume();
+		}
 	}
 }

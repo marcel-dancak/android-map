@@ -12,6 +12,7 @@ import com.jhlabs.geom.Point2D;
 import com.jhlabs.map.proj.Projection;
 import com.jhlabs.map.proj.ProjectionFactory;
 
+import sk.gista.android.maps.location.LocationOverlay;
 import sk.gista.android.settings.Settings;
 import sk.gista.android.utils.Utils;
 
@@ -79,6 +80,8 @@ public class Main extends Activity implements SensorEventListener {
         
         setContentView(R.layout.main);
         map = (Map) findViewById(R.id.map);
+        map.addOverlay(new LocationOverlay());
+        
         zoomIn = (Button) findViewById(R.id.zoom_in);
         zoomOut = (Button) findViewById(R.id.zoom_out);
         
@@ -119,6 +122,7 @@ public class Main extends Activity implements SensorEventListener {
     		loadLayersConfig();
     	}
     	restoreState();
+    	map.onResume();
     }
     
     @Override
@@ -143,8 +147,9 @@ public class Main extends Activity implements SensorEventListener {
     protected void onStop() {
     	Log.i(TAG, "** onStop");
     	super.onStop();
-    	map.recycle();
     	saveState();
+    	map.onPause();
+    	map.recycle();
     }
     
     private void saveState() {

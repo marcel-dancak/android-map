@@ -559,4 +559,28 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public PointF mapToScreenAligned(float x, float y) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void addOverlay(Overlay overlay) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onPause() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onResume() {
+		// TODO Auto-generated method stub
+		
+	}
 }
