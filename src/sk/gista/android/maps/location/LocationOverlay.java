@@ -35,10 +35,10 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 		this.context = context;
 		pointStyle = new Paint();
 		pointStyle.setAntiAlias(true);
-		pointStyle.setColor(Color.BLUE);
+		pointStyle.setColor(Color.RED);
 		
 		accuracyStyle = new Paint();
-		accuracyStyle.setColor(Color.argb(50, 0, 31, 204));
+		accuracyStyle.setColor(Color.argb(50, 204, 0, 0));
 	}
 	
 	@Override
@@ -52,7 +52,7 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 			PointF currentPos = map.mapToScreenAligned((float) projectedLocation.x, (float) projectedLocation.y);
 			float accuracy = currentLocation.getAccuracy()/(float) map.getLayer().getResolutions()[map.getZoom()];
 			canvas.drawArc(new RectF(currentPos.x-accuracy, currentPos.y-accuracy, currentPos.x+accuracy, currentPos.y+accuracy), 0, 360, true, accuracyStyle);
-			canvas.drawArc(new RectF(currentPos.x-2, currentPos.y-2, currentPos.x+2, currentPos.y+2), 0, 360, true, pointStyle);
+			canvas.drawArc(new RectF(currentPos.x-3, currentPos.y-3, currentPos.x+3, currentPos.y+3), 0, 360, true, pointStyle);
 		}
 	}
 
@@ -77,6 +77,7 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 	@Override
 	public void onLocationChanged(Location location) {
 		Log.i(TAG, "new location: "+location);
+		currentLocation = location;
 	}
 
 	@Override
