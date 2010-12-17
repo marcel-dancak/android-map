@@ -250,14 +250,44 @@ public class TmsLayer extends Layer {
 			URL url;
 			Bitmap image = null;
 			try {
-				String query = format("/1.0.0/%s/%d/%d/%d.%s", layer.name, tile.getZoomLevel(), tile.getX(), tile.getY(), layer.format);
+				//long t = System.currentTimeMillis();
+				//String query = format("/1.0.0/%s/%d/%d/%d.%s", layer.name, tile.getZoomLevel(), tile.getX(), tile.getY(), layer.format);
+				String query ="/1.0.0/"+layer.name+"/"+tile.getZoomLevel()+"/"+tile.getX()+"/"+tile.getY()+"."+ layer.format;
+				//Log.i(TAG, "formatting time: "+(System.currentTimeMillis()-t));
 				url = new URL(layer.serverUrl+"/"+query);
+				
+				//InputStream is = (InputStream) url.getContent();
+				//Log.i(TAG, "content" + is);
 				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-				InputStream is = httpCon.getInputStream();
-				byte [] content = inputStreamToByteArray(is);
-				image = BitmapFactory.decodeByteArray(content, 0, content.length);
-				//image = BitmapFactory.decodeStream(is);
-				is.close();
+				//httpCon.setDoInput(true);
+				//httpCon.connect();
+				//InputStream is = url.openStream();
+				InputStream nis = httpCon.getInputStream();
+				//nis.available();
+				/*
+				Log.i(TAG, Thread.currentThread().getName()+" "+nis.getClass().getSimpleName() +
+						" mark supported "+nis.markSupported() +
+						" available "+nis.available());
+				*/
+				//Log.i(TAG, "stream "+nis.getClass().getSimpleName() + " image: "+image);
+				
+				if (false) {
+					InputStream is = new PatchInputStream(nis);
+					image = BitmapFactory.decodeStream(is);
+				} else {
+					byte [] content = inputStreamToByteArray2(nis);
+					image = BitmapFactory.decodeByteArray(content, 0, content.length);
+					Log.i(TAG, Thread.currentThread().getName()+" content length: "+content.length);
+				}
+				
+				/*
+				Log.i(TAG, "stream "+is.getClass().getSimpleName() + " image: "+image +
+						" "+httpCon.getResponseCode() +
+						" "+httpCon.getContentLength() +
+						" "+httpCon.getContentType()
+				);*/
+				Log.i(TAG, Thread.currentThread().getName()+" image "+image);
+				nis.close();
 
 			} catch (Exception e) {
 				Log.e(TAG, "what!", e);
@@ -300,7 +330,7 @@ public class TmsLayer extends Layer {
 	    }
 	}
 	
-	public class PatchInputStream extends FilterInputStream {
+	public static class PatchInputStream extends FilterInputStream {
 		public PatchInputStream(InputStream in) {
 			super(in);
 		}
@@ -308,19 +338,36 @@ public class TmsLayer extends Layer {
 		@Override
 		public int read() throws IOException {
 			Log.i(TAG, "read 1");
-			return super.read();
+			return in.read();
 		}
 
 		@Override
 		public int read(byte[] buffer, int offset, int count) throws IOException {
-			Log.i(TAG, "read 3");
-			return super.read(buffer, offset, count);
+			int o = offset;
+			int result = in.read(buffer, o, 256);
+			while(result > 0) {
+				/*
+				for (int i = 0; i < result; i++) {
+					buffer[o+i] = 
+				}
+				*/
+				o += result;
+				
+				result = in.read(buffer, o, 256);
+			}
+			//int read = in.read(buffer, offset, count);
+			
+			Log.i(TAG, Thread.currentThread().getName()+" read 3 offset="+offset+" count="+count +" returned "+(o-offset));
+			//int x = o-offset;
+			//x = x + 4 - (x % 4);
+			return o-offset;
 		}
 		
 		@Override
 		public int read(byte[] buffer) throws IOException {
-			Log.i(TAG, "read 2");
-			return super.read(buffer);
+			int read =  in.read(buffer);
+			Log.i(TAG, Thread.currentThread().getName()+" read 2 "+buffer.length+" returned "+read);
+			return read;
 		}
 		
 		@Override
@@ -338,8 +385,25 @@ public class TmsLayer extends Layer {
 	}
 
 
-	public static final byte[] inputStreamToByteArray(InputStream is) throws IOException {
+	public static final byte[] inputStreamToByteArray2(InputStream is) throws IOException {
 		BufferedInputStream bis = new BufferedInputStream(is);
+		//InputStream bis = is;
+		ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		byte[] buffer = new byte[16384];
+		int result = bis.read(buffer);
+		//buf.write(buffer, 0, result);
+		
+		while(result > 0) {
+			buf.write(buffer, 0, result);
+			Log.i(TAG, "reading incomplete data "+result);
+			result = bis.read(buffer);
+		}
+		return buf.toByteArray();
+	}
+	
+	public static final byte[] inputStreamToByteArray(InputStream is) throws IOException {
+		//BufferedInputStream bis = new BufferedInputStream(is);
+		InputStream bis = is;
 		ByteArrayOutputStream buf = new ByteArrayOutputStream();
 		int result = bis.read();
 		while(result !=-1) {
