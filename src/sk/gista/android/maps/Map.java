@@ -57,12 +57,19 @@ public class Map extends View implements TileListener, MapView {
 	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
 	private List<Overlay> overlays;
 	
+	private boolean drawOverlays = true;
+	private boolean drawGraphicalScale = true;
+	
 	// drawing styles
 	private Paint imagesStyle;
 	private Paint mapStyle;
 	private Paint screenBorderStyle;
 	private Paint screenBorderStyle2;
 	private Paint whiteStyle;
+	private Paint scaleStyle;
+	
+	private float scaleWidth = 141.73236f;
+	private String scaleText;
 	
 	private Timer animTimer = new Timer();
 	private TmsVisualDebugger visualDebugger;
@@ -107,6 +114,10 @@ public class Map extends View implements TileListener, MapView {
 		
 		whiteStyle = new Paint();
 		whiteStyle.setColor(Color.WHITE);
+		
+		scaleStyle = new Paint();
+		scaleStyle.setFakeBoldText(true);
+		scaleStyle.setAntiAlias(true);
 		
 		overlays = new ArrayList<Overlay>(1);
 	}
@@ -173,6 +184,19 @@ public class Map extends View implements TileListener, MapView {
 		tileWidth = tmsLayer.getTileWidth() * getResolution();
 		tileHeight = tmsLayer.getTileHeight() * getResolution();
 		clearTiles();
+		
+		//double factor = 39.3701; // meters
+		//double scale = getResolution()* 72.0 * factor;
+		//scale = scale/20.0;
+		double scale = scaleWidth*getResolution();
+		String scaleUnitText;
+		if (scale >= 1000) {
+			scale /= 1000.0;
+			scaleUnitText = "km";
+		} else {
+			scaleUnitText = "m";
+		}
+		scaleText = format("%.2f %s", scale, scaleUnitText);
 	}
 
 	public TmsLayer getLayer() {
@@ -437,10 +461,11 @@ public class Map extends View implements TileListener, MapView {
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 		canvas.restore();
 		
-		for (Overlay overlay : overlays) {
-			overlay.onDraw(this, canvas);
+		if (drawOverlays) {
+			for (Overlay overlay : overlays) {
+				overlay.onDraw(this, canvas);
+			}
 		}
-
 		/*
 		canvas.drawRect(0, 0, width, height, screenBorderStyle2);
 		canvas.drawArc(new RectF(-3, -3, 3, 3), 0, 360, true, screenBorderStyle2);
@@ -448,8 +473,26 @@ public class Map extends View implements TileListener, MapView {
 		canvas.rotate(heading, width/2f, height/2f);
 		canvas.drawRect(0, 0, width, height, screenBorderStyle);
 		*/
+		if (drawGraphicalScale) {
+			drawGraphicalScale(canvas);
+		}
 	}
 
+	
+	private void drawGraphicalScale(Canvas canvas) {
+		canvas.save();
+		scaleStyle.setColor(Color.GRAY);
+		scaleStyle.setAlpha(150);
+		canvas.drawRect(5, 4, 10+scaleWidth, 20, scaleStyle);
+		scaleStyle.setAlpha(255);
+		scaleStyle.setColor(Color.BLACK);
+		canvas.drawRect(5, 4, 10+scaleWidth, 7, scaleStyle);
+
+		canvas.scale(1, -1, 0, 9);
+		canvas.drawText(scaleText, 10, 9, scaleStyle);
+		canvas.restore();
+	}
+	
 	private Point getTileAtScreen(int x, int y) {
 		assert x <= width && y <= height : "point outside the screen";
 		PointF mapPos = screenToMap(x, y);
@@ -610,12 +653,12 @@ public class Map extends View implements TileListener, MapView {
 						
 						Canvas canvas = new Canvas(zoomBackground);
 						showZoomBackground = false;
-						// draw map without overlays
-						List<Overlay> realOverlays = overlays;
-						overlays = Collections.emptyList();
+						drawOverlays = false;
+						drawGraphicalScale = false;
 						//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
 						onDraw(canvas);
-						overlays = realOverlays;
+						drawOverlays = true;
+						drawGraphicalScale = true;
 						
 						zoomPinch = 1f;
 						if (zoom != closestZoomLevel) {
