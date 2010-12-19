@@ -316,10 +316,12 @@ public class TilesManager {
 		protected void onPostExecute(Tile result) {
 			Log.i(TAG, "onPostExecute "+result.getImage());
 			manager.downloaders.remove(this);
-			if (result.getImage() != null) {
-				manager.fireTileLoad(result);
-			} else {
-				manager.fireTileLoadingFailed(result);
+			if (!isCancelled()) {
+				if (result.getImage() != null) {
+					manager.fireTileLoad(result);
+				} else {
+					manager.fireTileLoadingFailed(result);
+				}
 			}
 		}
 		
