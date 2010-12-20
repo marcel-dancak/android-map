@@ -231,6 +231,7 @@ public class TilesManager {
 				return;
 			}
 		}*/
+		/*
 		int pending = 0;
 		int running = 0;
 		int finished = 0;
@@ -251,6 +252,7 @@ public class TilesManager {
 			}
 		}
 		Log.i(TAG, "active downloaders: "+downloaders.size() + " Pending: "+pending + " Running: "+running+" Finished: "+finished);
+		*/
 		Downloader asyncDownloader = new Downloader();
 		downloaders.add(asyncDownloader);
 		asyncDownloader.layer = layer;
@@ -269,19 +271,25 @@ public class TilesManager {
 			Bitmap image = null;
 			try {
 				
-				boolean method = false;
+				boolean method = true;
 				if (method) {
 					HttpClient client = new DefaultHttpClient();
 					HttpGet get = new HttpGet(layer.getUrl(tile));
 					HttpResponse response = client.execute(get);
+					/*
 					for (Header header : response.getAllHeaders()) {
 						Log.i(TAG, header.getName() + ": "+header.getValue());
 					}
-					
+					*/
 					HttpEntity entity = response.getEntity();
-					Log.i(TAG, "Content-length: "+entity.getContentLength());
+					//Log.i(TAG, "Content-length: "+entity.getContentLength());
 					InputStream is = entity.getContent();
-					image = BitmapFactory.decodeStream(is);
+					byte [] content = inputStreamToByteArray(is);
+					if (content != null) {
+						image = BitmapFactory.decodeByteArray(content, 0, content.length);
+					}
+					//image = BitmapFactory.decodeStream(is);
+					//Log.i(TAG, Thread.currentThread().getName()+" image "+image);
 					is.close();
 				} else {
 					url = new URL(layer.getUrl(tile));
@@ -301,9 +309,10 @@ public class TilesManager {
 					}
 					//Log.i(TAG, Thread.currentThread().getName()+" content length: "+content.length);
 					is.close();
+					httpCon.disconnect();
 				}
 				
-				Log.i(TAG, Thread.currentThread().getName()+" image "+image);
+				//Log.i(TAG, Thread.currentThread().getName()+" image "+image);
 
 			} catch (Exception e) {
 				Log.e(TAG, "what!", e);
@@ -314,7 +323,7 @@ public class TilesManager {
 
 		@Override
 		protected void onPostExecute(Tile result) {
-			Log.i(TAG, "onPostExecute "+result.getImage());
+			//Log.i(TAG, "onPostExecute "+result.getImage());
 			manager.downloaders.remove(this);
 			if (!isCancelled()) {
 				if (result.getImage() != null) {
