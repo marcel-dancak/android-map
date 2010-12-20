@@ -589,4 +589,10 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void zoomTo(int zoom) {
+		// TODO Auto-generated method stub
+		
+	}
 }

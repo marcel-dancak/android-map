@@ -1,7 +1,6 @@
 package sk.gista.android.maps;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
@@ -10,25 +9,16 @@ import static java.lang.String.format;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
-import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.FloatMath;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.TranslateAnimation;
-
-import com.jhlabs.geom.Point2D;
 
 import sk.gista.android.maps.Layer.Tile;
 import sk.gista.android.maps.Layer.TileListener;
@@ -141,6 +131,68 @@ public class Map extends View implements TileListener, MapView {
 	
 	public int getZoom() {
 		return zoom;
+	}
+	
+	public void zoomTo(final int zoom) {
+		if (this.zoom == zoom) {
+			return;
+		}
+		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
+			final float endZoomPinch = getResolution() / (float) getLayer().getResolutions()[zoom];
+			MyAnimation animation = new MyAnimation(350, 6);
+			animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
+				
+				@Override
+				public void onFrame(final float fraction) {
+					Log.i(TAG, "fraction: "+fraction);
+					post(new Runnable() {
+						
+						@Override
+						public void run() {
+							zoomPinch = 1f + (endZoomPinch-1f)*fraction;
+							post(new Runnable() {
+								
+								@Override
+								public void run() {
+									invalidate();
+								}
+							});
+						}
+					});
+				}
+				
+				@Override
+				public void onEnd() {
+					
+					postDelayed(new Runnable() {
+						
+						@Override
+						public void run() {
+							if (zoomBackground == null) {
+								Log.i(TAG, "createBackgroundImage "+width+" x "+height);
+								zoomBackground = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+							}
+							
+							Canvas canvas = new Canvas(zoomBackground);
+							showZoomBackground = false;
+							drawOverlays = false;
+							drawGraphicalScale = false;
+							//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
+							onDraw(canvas);
+							drawOverlays = true;
+							drawGraphicalScale = true;
+							
+							zoomPinch = 1f;
+							if (Map.this.zoom != zoom) {
+								showZoomBackground = true;
+							}
+							setZoom(zoom);
+						}
+					}, 20);
+				}
+			});
+			animation.start();
+		}
 	}
 	
 	public void setZoom(int zoom) {
@@ -672,7 +724,6 @@ public class Map extends View implements TileListener, MapView {
 							showZoomBackground = true;
 						}
 						setZoom(closestZoomLevel);
-						invalidate();
 					}
 				});
 			}

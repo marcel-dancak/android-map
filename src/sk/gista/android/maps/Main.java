@@ -92,7 +92,8 @@ public class Main extends Activity implements SensorEventListener {
 			
 			@Override
 			public void onClick(View v) {
-				map.setZoom(map.getZoom()+1);
+				//map.setZoom(map.getZoom()+1);
+				map.zoomTo(map.getZoom()+1);
 			}
 		});
         
@@ -101,7 +102,8 @@ public class Main extends Activity implements SensorEventListener {
 			@Override
 			public void onClick(View v) {
 				if (map.getZoom() > 0) {
-					map.setZoom(map.getZoom()-1);
+					map.zoomTo(map.getZoom()-1);
+					//map.setZoom(map.getZoom()-1);
 				}
 			}
 		});

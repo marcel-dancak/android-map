@@ -18,5 +18,12 @@ public interface MapView extends AndroidComponent {
 	void addOverlay(Overlay overlay);
 	
 	void moveToLocation(float x, float y);
+	
+	/**
+	 * Zoom with animation
+	 * @param zoom
+	 */
+	void zoomTo(int zoom);
+	
 	void recycle();
 }
