@@ -729,4 +729,47 @@ public class Map extends View implements TileListener, MapView {
 			overlay.onResume();
 		}
 	}
+
+	@Override
+	public void moveToLocation(final float x, final float y) {
+		final float startX = center.x;
+		final float startY = center.y;
+		
+		int screenDistance = (int) (Utils.distance(x, y, center.x, center.y)/getResolution());
+		//Log.i(TAG, "distance: "+screenDistance+" px");
+		int maxAnimDistance = 2 * (int) Math.sqrt(width*width+height*height);
+		
+		if (screenDistance < maxAnimDistance) {
+		
+			float fraction = (screenDistance/(float) maxAnimDistance);
+			
+			MyAnimation animation = new MyAnimation(100+(int) (500*fraction), 2+(int)(10*fraction));
+			animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
+				
+				@Override
+				public void onFrame(final float fraction) {
+					
+					post(new Runnable() {
+						
+						@Override
+						public void run() {
+							center.x = startX + (x-startX)*fraction;;
+							center.y = startY + (y-startY)*fraction;
+							invalidate();
+						}
+					});
+				}
+				
+				@Override
+				public void onEnd() {
+					
+				}
+			});
+			animation.start();
+		} else {
+			center.x = x;
+			center.y = y;
+			invalidate();
+		}
+	}
 }

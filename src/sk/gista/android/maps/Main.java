@@ -68,6 +68,7 @@ public class Main extends Activity implements SensorEventListener {
 	private Button zoomOut;
 	
 	List<TmsLayer> layers;
+	private LocationOverlay locationOverlay;
 	
     /** Called when the activity is first created. */
     @Override
@@ -79,10 +80,13 @@ public class Main extends Activity implements SensorEventListener {
         
         setContentView(R.layout.main);
         map = (Map) findViewById(R.id.map);
-        map.addOverlay(new LocationOverlay(this));
+        
+        locationOverlay= new LocationOverlay(this);
+        map.addOverlay(locationOverlay);
         
         zoomIn = (Button) findViewById(R.id.zoom_in);
         zoomOut = (Button) findViewById(R.id.zoom_out);
+        Button moveToCurrentLocation = (Button) findViewById(R.id.move_to_position);
         
         zoomIn.setOnClickListener(new View.OnClickListener() {
 			
@@ -99,6 +103,17 @@ public class Main extends Activity implements SensorEventListener {
 				if (map.getZoom() > 0) {
 					map.setZoom(map.getZoom()-1);
 				}
+			}
+		});
+        
+        moveToCurrentLocation.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				Point2D location = locationOverlay.getLastLocation();
+				Point2D projected = new Point2D();
+				map.getLayer().getProjection().transform(location, projected);
+				map.moveToLocation((float) projected.x, (float) projected.y);
 			}
 		});
         

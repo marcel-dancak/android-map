@@ -57,6 +57,10 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 		}
 	}
 
+	public Point2D getLastLocation() {
+		return currentLocationPoint;
+	}
+	
 	@Override
 	public void onPause() {
 		locationManager.removeUpdates(this);

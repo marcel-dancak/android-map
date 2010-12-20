@@ -583,4 +583,10 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void moveToLocation(float x, float y) {
+		// TODO Auto-generated method stub
+		
+	}
 }

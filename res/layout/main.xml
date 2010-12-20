@@ -16,6 +16,13 @@
 	android:layout_alignParentRight="true"
 	android:layout_alignParentTop="true" >
 	<Button
+		android:id="@+id/move_to_position"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="o"
+		android:focusable="false"
+		/>
+	<Button
 		android:id="@+id/zoom_out"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"

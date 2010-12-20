@@ -17,5 +17,6 @@ public interface MapView extends AndroidComponent {
 	PointF mapToScreenAligned(float x, float y);
 	void addOverlay(Overlay overlay);
 	
+	void moveToLocation(float x, float y);
 	void recycle();
 }
