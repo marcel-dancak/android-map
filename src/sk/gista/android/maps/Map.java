@@ -174,6 +174,8 @@ public class Map extends View implements TileListener, MapView {
 							}
 							
 							Canvas canvas = new Canvas(zoomBackground);
+							zoomBgStart.x = center.x;
+							zoomBgStart.y = center.y;
 							showZoomBackground = false;
 							drawOverlays = false;
 							drawGraphicalScale = false;
@@ -286,6 +288,8 @@ public class Map extends View implements TileListener, MapView {
 	private float zoomPinch = 1f;
 	private Bitmap zoomBackground;
 	private boolean showZoomBackground;
+	
+	private PointF zoomBgStart = new PointF();
 	
 	private long lastTouchTime;
 	//private Matrix overlayMatrix;
@@ -438,7 +442,7 @@ public class Map extends View implements TileListener, MapView {
 		canvas.drawRGB(255, 255, 255);
 		if (showZoomBackground) {
 			//Log.i(TAG, "drawing background");
-			canvas.drawBitmap(zoomBackground, 0, 0, null);
+			canvas.drawBitmap(zoomBackground, (zoomBgStart.x-center.x)/getResolution(), -(zoomBgStart.y-center.y)/getResolution(), null);
 			//return;
 		}
 		if (tmsLayer == null) {
@@ -711,18 +715,19 @@ public class Map extends View implements TileListener, MapView {
 			
 			@Override
 			public void onEnd() {
-				Log.i(TAG, "onEnd");
-				
+				//Log.i(TAG, "onEnd");
 				post(new Runnable() {
 					
 					@Override
 					public void run() {
 						if (zoomBackground == null) {
-							Log.i(TAG, "createBackgroundImage "+width+" x "+height);
+							//Log.i(TAG, "createBackgroundImage "+width+" x "+height);
 							zoomBackground = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 						}
 						
 						Canvas canvas = new Canvas(zoomBackground);
+						zoomBgStart.x = center.x;
+						zoomBgStart.y = center.y;
 						showZoomBackground = false;
 						drawOverlays = false;
 						drawGraphicalScale = false;
@@ -873,6 +878,8 @@ public class Map extends View implements TileListener, MapView {
 						}
 						
 						Canvas canvas = new Canvas(zoomBackground);
+						zoomBgStart.x = center.x;
+						zoomBgStart.y = center.y;
 						showZoomBackground = false;
 						drawOverlays = false;
 						drawGraphicalScale = false;
