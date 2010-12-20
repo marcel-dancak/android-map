@@ -81,7 +81,7 @@ public class Main extends Activity implements SensorEventListener {
         setContentView(R.layout.main);
         map = (Map) findViewById(R.id.map);
         
-        locationOverlay= new LocationOverlay(this);
+        locationOverlay= new LocationOverlay(this, map);// TODO: remove map parameter
         map.addOverlay(locationOverlay);
         
         zoomIn = (Button) findViewById(R.id.zoom_in);

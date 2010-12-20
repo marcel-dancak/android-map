@@ -25,5 +25,7 @@ public interface MapView extends AndroidComponent {
 	 */
 	void zoomTo(int zoom);
 	
+	void redraw();
+	
 	void recycle();
 }

@@ -595,4 +595,10 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void redraw() {
+		// TODO Auto-generated method stub
+		
+	}
 }

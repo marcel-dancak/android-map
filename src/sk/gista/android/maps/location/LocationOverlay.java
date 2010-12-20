@@ -23,6 +23,8 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 	private static final String TAG = LocationOverlay.class.getName();
 	
 	private Context context;
+	private MapView map;
+	
 	private LocationManager locationManager;
 	private Location currentLocation;
 	private Point2D currentLocationPoint = new Point2D(); //new Point2D(21.23886386, 49.00096926)
@@ -31,8 +33,9 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 	private Paint pointStyle;
 	private Paint accuracyStyle;
 	
-	public LocationOverlay(Context context) {
+	public LocationOverlay(Context context, MapView map) {
 		this.context = context;
+		this.map = map;
 		pointStyle = new Paint();
 		pointStyle.setAntiAlias(true);
 		pointStyle.setColor(Color.RED);
@@ -83,6 +86,7 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 	public void onLocationChanged(Location location) {
 		Log.i(TAG, "new location: "+location);
 		currentLocation = location;
+		map.redraw();
 	}
 
 	@Override

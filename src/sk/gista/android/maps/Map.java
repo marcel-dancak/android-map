@@ -899,4 +899,9 @@ public class Map extends View implements TileListener, MapView {
 		});
 		animation.start();
 	}
+
+	@Override
+	public void redraw() {
+		invalidate();
+	}
 }
