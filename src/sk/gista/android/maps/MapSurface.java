@@ -149,7 +149,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 			buildTextTextures();
 			//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_ortofoto_2009", "jpeg");
 			//tmsLayer = new TmsLayer("http://tc.gisplan.sk/1.0.0/", "tmspresov_gg_ortofoto_2009", "jpeg");
-			tmsLayer.addTileListener(this);
+			//tmsLayer.addTileListener(this);
 			setZoom(1);
 			
 			String[] params = {
@@ -337,7 +337,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 					if (tiles.containsKey(tileKey)) {
 						tile = tiles.get(tileKey);
 					} else {
-						tmsLayer.requestTile(tile);
+						//tmsLayer.requestTile(tile);
 						tile = new Tile(x, y, zoom, null);
 						tiles.put(tileKey, tile);
 					}
@@ -382,7 +382,7 @@ public class MapSurface extends SurfaceView implements SurfaceHolder.Callback, M
 			if (tiles.containsKey(tileKey)) {
 				tile = tiles.get(tileKey);
 			} else {
-				tmsLayer.requestTile(tile);
+				//tmsLayer.requestTile(tile);
 				tile = new Tile(x, y, zoom, null);
 				tiles.put(tileKey, tile);
 			}

@@ -55,6 +55,7 @@ public class Map extends View implements TileListener, MapView {
 	//private List<Layer> layers = Collections.emptyList();
 	private TmsLayer tmsLayer;
 	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
+	private TilesManager tilesManager;
 	private List<Overlay> overlays;
 	
 	private boolean drawOverlays = true;
@@ -124,11 +125,15 @@ public class Map extends View implements TileListener, MapView {
 	
 	public void setLayer(TmsLayer layer) {
 		clearTiles();
+		if (tilesManager != null) {
+			tilesManager.cancelAll();
+		}
+		tilesManager = new TilesManager(layer);
+		tilesManager.addTileListener(this);
 		tmsLayer = layer;
 		bbox = layer.getBoundingBox();
 		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
 
-		tmsLayer.addTileListener(this);
 		visualDebugger = new TmsVisualDebugger(this);
 		//setZoom(1);
 		onZoomChange(zoom, zoom);
@@ -183,6 +188,7 @@ public class Map extends View implements TileListener, MapView {
 	protected void onZoomChange(int oldZoom, int zoom) {
 		tileWidth = tmsLayer.getTileWidth() * getResolution();
 		tileHeight = tmsLayer.getTileHeight() * getResolution();
+		tilesManager.cancelAll();
 		clearTiles();
 		
 		//double factor = 39.3701; // meters
@@ -454,7 +460,8 @@ public class Map extends View implements TileListener, MapView {
 		if (neededTiles.size() > 0) {
 			//tmsLayer.requestTiles(neededTiles);
 			//tmsLayer.requestTilesAsync(neededTiles);
-			tmsLayer.requestTiles2(neededTiles);
+			//tmsLayer.requestTiles2(neededTiles);
+			tilesManager.requestTiles2(neededTiles);
 		}
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		

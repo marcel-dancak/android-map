@@ -1,13 +1,10 @@
 package sk.gista.android.maps;
 
-import java.util.ArrayList;
-import java.util.List;
+import android.graphics.Bitmap;
 
 import com.jhlabs.map.proj.NullProjection;
 import com.jhlabs.map.proj.Projection;
-import com.jhlabs.map.proj.ProjectionFactory;
 
-import android.graphics.Bitmap;
 
 public abstract class Layer {
 
@@ -15,7 +12,6 @@ public abstract class Layer {
 	protected double[] resolutions;
 	protected Projection projection;
 	
-	private List<TileListener> tileListeners = new ArrayList<TileListener>();
 	
 	public Layer(BBox bbox, double[] resolutions) {
 		this(bbox, resolutions, new NullProjection());
@@ -38,22 +34,6 @@ public abstract class Layer {
 	
 	public Projection getProjection() {
 		return projection;
-	}
-	
-	public void addTileListener(TileListener listener) {
-		tileListeners.add(listener);
-	}
-	
-	protected void fireTileLoad(Tile tile) {
-		for (TileListener listener : tileListeners) {
-			listener.onTileLoad(tile);
-		}
-	}
-	
-	protected void fireTileLoadingFailed(Tile tile) {
-		for (TileListener listener : tileListeners) {
-			listener.onTileLoadingFailed(tile);
-		}
 	}
 	
 	public abstract String getName();
