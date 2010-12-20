@@ -54,4 +54,9 @@ public class WmsLayer extends Layer {
 		}
 		return null;
 	}
+
+	@Override
+	public String getName() {
+		throw new UnsupportedOperationException();
+	}
 }

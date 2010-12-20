@@ -19,6 +19,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import sk.gista.android.maps.Layer.Tile;
 
 import com.jhlabs.map.proj.Projection;
@@ -69,6 +74,10 @@ public class TmsLayer extends Layer {
 		return title;
 	}
 
+	public String getName() {
+		return name;
+	}
+	
 	BlockingQueue<Tile> queue = new LinkedBlockingQueue<Layer.Tile>(10);
 	
 	private void startLoop() {
@@ -254,40 +263,50 @@ public class TmsLayer extends Layer {
 				//String query = format("/1.0.0/%s/%d/%d/%d.%s", layer.name, tile.getZoomLevel(), tile.getX(), tile.getY(), layer.format);
 				String query ="/1.0.0/"+layer.name+"/"+tile.getZoomLevel()+"/"+tile.getX()+"/"+tile.getY()+"."+ layer.format;
 				//Log.i(TAG, "formatting time: "+(System.currentTimeMillis()-t));
-				url = new URL(layer.serverUrl+"/"+query);
 				
-				//InputStream is = (InputStream) url.getContent();
-				//Log.i(TAG, "content" + is);
-				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-				//httpCon.setDoInput(true);
-				//httpCon.connect();
-				//InputStream is = url.openStream();
-				InputStream nis = httpCon.getInputStream();
-				//nis.available();
-				/*
-				Log.i(TAG, Thread.currentThread().getName()+" "+nis.getClass().getSimpleName() +
-						" mark supported "+nis.markSupported() +
-						" available "+nis.available());
-				*/
-				//Log.i(TAG, "stream "+nis.getClass().getSimpleName() + " image: "+image);
+				HttpClient httpClient = new DefaultHttpClient();
+				HttpGet method = new HttpGet(layer.serverUrl+"/"+query);
+				HttpResponse response = httpClient.execute(method);
+				InputStream httpIs = response.getEntity().getContent();
+				image = BitmapFactory.decodeStream(httpIs);
+				httpIs.close();
 				
 				if (false) {
-					InputStream is = new PatchInputStream(nis);
-					image = BitmapFactory.decodeStream(is);
-				} else {
-					byte [] content = inputStreamToByteArray2(nis);
-					image = BitmapFactory.decodeByteArray(content, 0, content.length);
-					Log.i(TAG, Thread.currentThread().getName()+" content length: "+content.length);
+					url = new URL(layer.serverUrl+"/"+query);
+					
+					//InputStream is = (InputStream) url.getContent();
+					//Log.i(TAG, "content" + is);
+					HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+					//httpCon.setDoInput(true);
+					//httpCon.connect();
+					//InputStream is = url.openStream();
+					InputStream nis = httpCon.getInputStream();
+					//nis.available();
+					/*
+					Log.i(TAG, Thread.currentThread().getName()+" "+nis.getClass().getSimpleName() +
+							" mark supported "+nis.markSupported() +
+							" available "+nis.available());
+					*/
+					//Log.i(TAG, "stream "+nis.getClass().getSimpleName() + " image: "+image);
+					
+					if (false) {
+						InputStream is = new PatchInputStream(nis);
+						image = BitmapFactory.decodeStream(is);
+					} else {
+						byte [] content = inputStreamToByteArray2(nis);
+						image = BitmapFactory.decodeByteArray(content, 0, content.length);
+						Log.i(TAG, Thread.currentThread().getName()+" content length: "+content.length);
+					}
+					
+					/*
+					Log.i(TAG, "stream "+is.getClass().getSimpleName() + " image: "+image +
+							" "+httpCon.getResponseCode() +
+							" "+httpCon.getContentLength() +
+							" "+httpCon.getContentType()
+					);*/
+					Log.i(TAG, Thread.currentThread().getName()+" image "+image);
+					nis.close();
 				}
-				
-				/*
-				Log.i(TAG, "stream "+is.getClass().getSimpleName() + " image: "+image +
-						" "+httpCon.getResponseCode() +
-						" "+httpCon.getContentLength() +
-						" "+httpCon.getContentType()
-				);*/
-				Log.i(TAG, Thread.currentThread().getName()+" image "+image);
-				nis.close();
 
 			} catch (Exception e) {
 				Log.e(TAG, "what!", e);

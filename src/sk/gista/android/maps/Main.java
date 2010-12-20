@@ -54,12 +54,11 @@ public class Main extends Activity implements SensorEventListener {
 	
 	// persistent state values
 	static final String ZOOM = "map_zoom";
-	static final String LAYER_ID = "layer_id";
+	static final String LAYER_NAME = "layer_name";
 	static final String CENTER_X = "center_x";
 	static final String CENTER_Y = "center_y";
 	
 	private String layersSetting;
-	private int layerId;
 	
 	private SharedPreferences mapState;
 	
@@ -161,10 +160,11 @@ public class Main extends Activity implements SensorEventListener {
     private void saveState() {
     	Log.i(TAG, "Save perzistent state variables");
     	Editor state = mapState.edit();
-    	state.putInt(LAYER_ID, layerId);
-    	state.putInt(ZOOM, map.getZoom());
     	
     	if (map.getLayer() != null) {
+    		state.putString(LAYER_NAME, map.getLayer().getName());
+        	state.putInt(ZOOM, map.getZoom());
+        	
     		Point2D center = new Point2D(map.getCenter().x, map.getCenter().y);
     		Point2D wgs84Center = new Point2D();
     		Projection proj = map.getLayer().getProjection();
@@ -176,21 +176,24 @@ public class Main extends Activity implements SensorEventListener {
     }
     
     private void restoreState() {
-    	layerId = mapState.getInt(LAYER_ID, 0);
+    	String layerName = mapState.getString(LAYER_NAME, "");
     	int zoom = mapState.getInt(ZOOM, 0);
     	float centerX = mapState.getFloat(CENTER_X, Float.MIN_VALUE);
     	float centerY = mapState.getFloat(CENTER_Y, Float.MIN_VALUE);
     	Log.i(TAG, "Restoring state: zoom="+zoom + " center="+centerX+", "+centerY);
-    	if (layerId < layers.size()) {
-    		TmsLayer layer = layers.get(layerId); 
-    		map.setLayer(layer);
-    		if (centerX != Float.MIN_VALUE) {
-    			Point2D wgs84Center = new Point2D(centerX, centerY);
-    			Point2D center = new Point2D();
-    			layer.getProjection().transform(wgs84Center, center);
-        		map.setCenter((float) center.x, (float) center.y);
-        	}
-    		map.setZoom(zoom);
+    	
+    	for (TmsLayer layer : layers) {
+    		if (layer.getName().equals(layerName)) {
+    			map.setLayer(layer);
+        		if (centerX != Float.MIN_VALUE) {
+        			Point2D wgs84Center = new Point2D(centerX, centerY);
+        			Point2D center = new Point2D();
+        			layer.getProjection().transform(wgs84Center, center);
+            		map.setCenter((float) center.x, (float) center.y);
+            	}
+        		map.setZoom(zoom);
+        		break;
+    		}
     	}
     }
     
@@ -225,8 +228,7 @@ public class Main extends Activity implements SensorEventListener {
 
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					layerId = which;
-					TmsLayer layer = layers.get(layerId);
+					TmsLayer layer = layers.get(which);
 					Point2D newCenter = null;
 					if (map.getLayer() != null) {
 						Point2D center = new Point2D(map.getCenter().x, map.getCenter().y);
@@ -263,13 +265,15 @@ public class Main extends Activity implements SensorEventListener {
 		case DIALOG_LAYERS_ID:
 			AlertDialog layersDialog = (AlertDialog) dialog;
 			String[] items = new String[layers.size()];
+			
+			TmsLayer currentLayer = map.getLayer();
 			for (int i = 0; i < layers.size(); i++) {
 				items[i] = layers.get(i).getTitle();
+				if (currentLayer != null && currentLayer.getName().equals(layers.get(i).getName())) {
+					items[i] = ">" + items[i];
+				}
 			}
 			
-			if (layerId >= 0 && layerId < items.length) {
-				items[layerId] = "> "+items[layerId];
-			}
 			ListView list = layersDialog.getListView();
 			list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 			

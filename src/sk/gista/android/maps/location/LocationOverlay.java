@@ -51,6 +51,7 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 			//Log.i(TAG, format("projected position: [%f, %f]", projectedLocation.x, projectedLocation.y));
 			PointF currentPos = map.mapToScreenAligned((float) projectedLocation.x, (float) projectedLocation.y);
 			float accuracy = currentLocation.getAccuracy()/(float) map.getLayer().getResolutions()[map.getZoom()];
+			//float accuracy = 75.0f/(float) map.getLayer().getResolutions()[map.getZoom()]; // for tests on emulator
 			canvas.drawArc(new RectF(currentPos.x-accuracy, currentPos.y-accuracy, currentPos.x+accuracy, currentPos.y+accuracy), 0, 360, true, accuracyStyle);
 			canvas.drawArc(new RectF(currentPos.x-3, currentPos.y-3, currentPos.x+3, currentPos.y+3), 0, 360, true, pointStyle);
 		}

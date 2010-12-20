@@ -56,6 +56,8 @@ public abstract class Layer {
 		}
 	}
 	
+	public abstract String getName();
+	
 	public static class Tile {
 		private int x;
 		private int y;
