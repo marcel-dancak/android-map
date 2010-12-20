@@ -7,6 +7,7 @@ public class MyAnimation extends TimerTask {
 
 	private int duration;
 	private int count;
+	private int frame;
 	private Timer timer;
 	private long startTime;
 	
@@ -22,6 +23,7 @@ public class MyAnimation extends TimerTask {
 			timer.cancel();
 		}
 		timer = new Timer();
+		frame = 0;
 		startTime = System.currentTimeMillis();
 		timer.schedule(this, 0, duration/count);
 	}
@@ -32,16 +34,17 @@ public class MyAnimation extends TimerTask {
 	
 	@Override
 	public void run() {
-		float fraction = (System.currentTimeMillis()-startTime)/(float) duration;
-		if (fraction <= 1) {
-			if (listener != null) {
-				listener.onFrame(fraction);
-			}
-		} else {
+		frame++;
+		if (frame > count) {
 			timer.cancel();
 			if (listener != null) {
-				listener.onFrame(1);
 				listener.onEnd();
+			}
+		} else {
+			//float fraction = (System.currentTimeMillis()-startTime)/(float) duration;
+			float fraction = frame/(float) count;
+			if (listener != null) {
+				listener.onFrame(fraction);
 			}
 		}
 	}

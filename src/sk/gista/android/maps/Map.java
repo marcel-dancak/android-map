@@ -144,7 +144,7 @@ public class Map extends View implements TileListener, MapView {
 				
 				@Override
 				public void onFrame(final float fraction) {
-					Log.i(TAG, "fraction: "+fraction);
+					//Log.i(TAG, "fraction: "+fraction);
 					post(new Runnable() {
 						
 						@Override
@@ -164,7 +164,7 @@ public class Map extends View implements TileListener, MapView {
 				@Override
 				public void onEnd() {
 					
-					postDelayed(new Runnable() {
+					post(new Runnable() {
 						
 						@Override
 						public void run() {
@@ -188,7 +188,7 @@ public class Map extends View implements TileListener, MapView {
 							}
 							setZoom(zoom);
 						}
-					}, 20);
+					});
 				}
 			});
 			animation.start();
@@ -287,6 +287,7 @@ public class Map extends View implements TileListener, MapView {
 	private Bitmap zoomBackground;
 	private boolean showZoomBackground;
 	
+	private long lastTouchTime;
 	//private Matrix overlayMatrix;
 	
 	@Override
@@ -297,8 +298,11 @@ public class Map extends View implements TileListener, MapView {
 		float x = event.getX(0);
 		float y = height-event.getY(0);
 		
+		long curTime = System.currentTimeMillis();
+		
 		
 		int action = event.getAction() & MotionEvent.ACTION_MASK;
+		
 		switch (action) {
 		case MotionEvent.ACTION_POINTER_DOWN:
 			wasZoom = true;
@@ -320,34 +324,38 @@ public class Map extends View implements TileListener, MapView {
 			//wasZoom = false;
 			break;
 		case MotionEvent.ACTION_DOWN:
-			//wasZoom = false;
-			//showZoomBackground = false;
-			/*
-			Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
-					tiles.size(),
-					Runtime.getRuntime().freeMemory()/1024,
-					Runtime.getRuntime().totalMemory()/1024,
-					Runtime.getRuntime().maxMemory()/1024));
-			*/
-			isMooving = true;
-			centerAtDragStart = new PointF(center.x, center.y);
-			dragStart = screenToMap(x, y);
-			dragStartPx = new PointF(x, y);
-			lastPos = screenToMap(x, y);
-			animTimer.schedule(new TimerTask() {
-				
-				@Override
-				public void run() {
-					post(new Runnable() {
-						
-						@Override
-						public void run() {
-							invalidate();
-						}
-					});
-				}
-			}, 30, 60);
-			
+			//Log.i(TAG, "delta: "+(curTime - lastTouchTime));
+			if (curTime - lastTouchTime < 100) {
+				Log.i(TAG, "Double click!");
+			} else {
+				//wasZoom = false;
+				//showZoomBackground = false;
+				/*
+				Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
+						tiles.size(),
+						Runtime.getRuntime().freeMemory()/1024,
+						Runtime.getRuntime().totalMemory()/1024,
+						Runtime.getRuntime().maxMemory()/1024));
+				*/
+				isMooving = true;
+				centerAtDragStart = new PointF(center.x, center.y);
+				dragStart = screenToMap(x, y);
+				dragStartPx = new PointF(x, y);
+				lastPos = screenToMap(x, y);
+				animTimer.schedule(new TimerTask() {
+					
+					@Override
+					public void run() {
+						post(new Runnable() {
+							
+							@Override
+							public void run() {
+								invalidate();
+							}
+						});
+					}
+				}, 30, 60);
+			}
 			break;
 		case MotionEvent.ACTION_UP:
 			// for the case when event with ACTION_POINTER_UP action didn't occurred
@@ -359,6 +367,7 @@ public class Map extends View implements TileListener, MapView {
 			animTimer = new Timer();
 			isMooving = false;
 			wasZoom = false;
+			lastTouchTime = curTime;
 			break;
 		case MotionEvent.ACTION_MOVE:
 			//Log.i(TAG, "ACTION_MOVE "+event.getPointerCount());
