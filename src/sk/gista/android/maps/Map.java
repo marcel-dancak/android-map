@@ -535,6 +535,11 @@ public class Map extends View implements TileListener, MapView {
 		
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 		canvas.restore();
+		if (zoomPinch > 1) {
+			canvas.drawARGB((int) (100*(zoomPinch-1f)), 255, 255, 255);
+		} else if (zoomPinch < 1) {
+			canvas.drawARGB((int) (100*((1f/zoomPinch) -1f)), 255, 255, 255);
+		}
 		
 		if (drawOverlays) {
 			for (Overlay overlay : overlays) {
