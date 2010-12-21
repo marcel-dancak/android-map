@@ -535,15 +535,22 @@ public class Map extends View implements TileListener, MapView {
 		
 		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 		canvas.restore();
-		if (zoomPinch > 1) {
-			canvas.drawARGB((int) (100*(zoomPinch-1f)), 255, 255, 255);
-		} else if (zoomPinch < 1) {
-			canvas.drawARGB((int) (100*((1f/zoomPinch) -1f)), 255, 255, 255);
+		float fadeStrength = zoomPinch;
+		if (zoomPinch > 1f) {
+			if (zoomPinch > 2f) {
+				fadeStrength = 2f;
+			}
+			canvas.drawARGB((int) (100*(fadeStrength-1f)), 255, 255, 255);
+		} else if (zoomPinch < 1f) {
+			if (zoomPinch < 0.5f) {
+				fadeStrength = 0.5f;
+			}
+			canvas.drawARGB((int) (100*((1f/fadeStrength) -1f)), 255, 255, 255);
 		}
 		
 		if (drawOverlays) {
 			for (Overlay overlay : overlays) {
-				overlay.onDraw(this, canvas);
+				overlay.onDraw(this, canvas, zoomPinch);
 			}
 		}
 		/*
