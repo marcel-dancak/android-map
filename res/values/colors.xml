@@ -4,5 +4,5 @@
     <color name="red">#ff800000</color>
     <color name="white">#ffffff</color>
     <color name="black">#000000</color>
-    <color name="transparent">#ff000000</color>
+    <color name="transparent">#00000000</color>
 </resources>

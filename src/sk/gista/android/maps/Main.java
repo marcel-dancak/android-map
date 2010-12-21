@@ -39,6 +39,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckedTextView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -284,10 +285,11 @@ public class Main extends Activity implements SensorEventListener {
 			String[] items = new String[layers.size()];
 			
 			TmsLayer currentLayer = map.getLayer();
+			int selectedItem = -1;
 			for (int i = 0; i < layers.size(); i++) {
 				items[i] = layers.get(i).getTitle();
 				if (currentLayer != null && currentLayer.getName().equals(layers.get(i).getName())) {
-					items[i] = ">" + items[i];
+					selectedItem = i;
 				}
 			}
 			
@@ -296,12 +298,12 @@ public class Main extends Activity implements SensorEventListener {
 			
 			//Log.i(TAG, "enabled "+layersDialog.getListView().getAdapter().isEnabled(0));
 			//list.setSelector(R.drawable.selector);
-			layersDialog.getListView().setAdapter(new ArrayAdapter<String>(this, R.layout.list_item, items));
+			//layersDialog.getListView().setAdapter(new ArrayAdapter<String>(this, R.layout.list_item, items));
 			//layersDialog.getListView().setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, items));
-			//list.setItemChecked(0, true);
-			//list.setItemChecked(1, false);
-			
-			//list.setItemChecked(1, true);
+			layersDialog.getListView().setAdapter(new ArrayAdapter<String>(this, R.layout.simple_list_item_single_choice, items));
+			if (selectedItem != -1) {
+				list.setItemChecked(selectedItem, true);
+			}
 			//list.setSelection(1);
 			//list.setSelected(true);
 			//Log.i(TAG, "Selected item: "+list.getSelectedItem());

@@ -19,7 +19,7 @@
 		android:id="@+id/move_to_position"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:text="o"
+		android:text="\?"
 		android:focusable="false"
 		/>
 	<Button
