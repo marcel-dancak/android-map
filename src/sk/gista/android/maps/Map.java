@@ -86,6 +86,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 
 	private void postInit() {
+		Log.i(TAG, "Creating Map");
 		imagesStyle = new Paint();
 		imagesStyle.setFilterBitmap(true);
 		
@@ -114,7 +115,9 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	public void setLayer(TmsLayer layer) {
-		clearTiles();
+		if (this.tmsLayer != layer) {
+			clearTiles();
+		}
 		if (tilesManager != null) {
 			tilesManager.cancelAll();
 		}
@@ -230,13 +233,15 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.i(TAG, format("width: %d height: %d", w, h));
+		Log.i(TAG, "Cached tiles: "+tiles.size());
 		if (zoomBackground != null) {
 			zoomBackground.recycle();
+			zoomBackground = null;
 		}
 		size = (int) Math.ceil(Math.sqrt(w*w+h*h));
 		width = w;
 		height = h;
-		clearTiles();
+		//clearTiles();
 	}
 
 	protected void onZoomChange(int oldZoom, int zoom) {
@@ -264,6 +269,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	private void clearTiles() {
+		Log.i(TAG, "Clearing tiles");
 		synchronized (tiles) {
 			for (Tile tile : tiles.values()) {
 				tile.recycle();

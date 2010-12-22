@@ -24,6 +24,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.ActivityInfo;
 import android.graphics.PointF;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -71,12 +72,13 @@ public class Main extends Activity implements SensorEventListener {
 	List<TmsLayer> layers;
 	private LocationOverlay locationOverlay;
 	
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	Log.i(TAG, "** onCreate");
         super.onCreate(savedInstanceState);
-        
+        //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         mapState = getSharedPreferences("MAP_STATE", MODE_PRIVATE);
         
         setContentView(R.layout.main);
@@ -122,6 +124,10 @@ public class Main extends Activity implements SensorEventListener {
         
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         //sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_UI);
+        if (layers == null || layers.size() == 0) {
+    		loadLayersConfig();
+    	}
+        restoreState();
     }
     
     @Override
@@ -133,12 +139,15 @@ public class Main extends Activity implements SensorEventListener {
     @Override
     protected void onResume() {
     	Log.i(TAG, "** onResume");
+    	//setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     	super.onResume();
+    	
     	
     	if (layers == null || layers.size() == 0) {
     		loadLayersConfig();
+    		restoreState();
     	}
-    	restoreState();
+    	//restoreState();
     	map.onResume();
     }
     
@@ -166,13 +175,14 @@ public class Main extends Activity implements SensorEventListener {
     	super.onPause();
     	saveState();
     	map.onPause();
-    	map.recycle();
+    	//map.recycle();
     }
     
     @Override
     protected void onStop() {
     	Log.i(TAG, "** onStop");
     	super.onStop();
+    	map.recycle();
     }
     
     private void saveState() {
