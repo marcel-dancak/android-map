@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+import sys
+import subprocess
+
+pipe = subprocess.Popen('git log | grep "Date:" | wc -l', stdout=subprocess.PIPE, shell=True)
+out = pipe.stdout.read()
+
+current_revision = int(out)+1
+print "revision: %d" % current_revision
+
+from xml.dom.minidom import parse, parseString
+dom = parse("AndroidManifest.xml")
+manifest = dom.documentElement
+if manifest.hasAttribute('android:versionName'):
+	versionName = manifest.getAttribute('android:versionName')
+	print versionName
+	version, revision = versionName.split('-r') #TODO: check for errors
+	if revision != str(current_revision):
+		manifest.setAttribute('android:versionName', "%s-r%s" % (version, current_revision))
+		xml = open("AndroidManifest.xml", "w")
+		dom.writexml(xml)
+		xml.close()
+		subprocess.call('git add AndroidManifest.xml', shell=True)
+else:
+	sys.stderr.write("versionName not defined!\n")
+	sys.exit(2)
