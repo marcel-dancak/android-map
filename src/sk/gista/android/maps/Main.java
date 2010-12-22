@@ -12,6 +12,7 @@ import com.jhlabs.geom.Point2D;
 import com.jhlabs.map.proj.Projection;
 import com.jhlabs.map.proj.ProjectionFactory;
 
+import sk.gista.android.app.About;
 import sk.gista.android.maps.location.LocationOverlay;
 import sk.gista.android.settings.Settings;
 import sk.gista.android.utils.Utils;
@@ -241,6 +242,9 @@ public class Main extends Activity implements SensorEventListener {
 			return true;
 		case R.id.settings:
 			startActivity(new Intent(this, Settings.class));
+			return true;
+		case R.id.about:
+			startActivity(new Intent(this, About.class));
 			return true;
 		}
 		return false;

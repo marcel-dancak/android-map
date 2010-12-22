@@ -6,7 +6,13 @@
     <string name="layers_prompt">Select layer</string>
     <string name="settings_label">Settings</string>
     <string name="settings_shortcut">s</string>
-    
+    <string name="about_title">About</string>
+    <string name="about_label">About</string>
+    <string name="about_text">
+(C) 2010 Gista s.r.o.\n
+e-mail: admin@gista.sk\n
+www.gista.sk
+</string>
     <string name="layers_config_url_label">Layers configuration</string>
     <string name="layers_config_summary">Url address of available layers</string>
 </resources>

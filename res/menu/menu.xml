@@ -8,4 +8,7 @@
 	   android:title="@string/settings_label"
 	   android:alphabeticShortcut="@string/settings_shortcut"
 	   android:icon="@android:drawable/ic_menu_manage" />
+   <item android:id="@+id/about"
+	   android:title="@string/about_label"
+	   android:icon="@android:drawable/ic_menu_info_details" />
 </menu>
