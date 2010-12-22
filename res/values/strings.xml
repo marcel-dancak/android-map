@@ -15,4 +15,5 @@ www.gista.sk
 </string>
     <string name="layers_config_url_label">Layers configuration</string>
     <string name="layers_config_summary">Url address of available layers</string>
+    <string name="screen_orientation_label">Screen orientation</string>
 </resources>

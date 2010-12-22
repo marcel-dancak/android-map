@@ -80,6 +80,8 @@ public class Main extends Activity implements SensorEventListener {
     	Log.i(TAG, "** onCreate");
         super.onCreate(savedInstanceState);
         //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        //Log.i(TAG, "LANDSCAPE: "+ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        //Log.i(TAG, "PORTRAIT: "+ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         mapState = getSharedPreferences("MAP_STATE", MODE_PRIVATE);
         
         setContentView(R.layout.main);
@@ -135,6 +137,11 @@ public class Main extends Activity implements SensorEventListener {
     protected void onStart() {
     	Log.i(TAG, "** onStart");
     	super.onStart();
+    	int orientation = Integer.parseInt(getSetting("screen_orientation", "1"));
+    	if (orientation != getRequestedOrientation()) {
+    		setRequestedOrientation(orientation);
+    	}
+    	Log.i(TAG, "screen orient: "+orientation);
     }
     
     @Override
@@ -388,5 +395,9 @@ public class Main extends Activity implements SensorEventListener {
 		} catch (JSONException e) {
 			Log.e(TAG, e.getMessage(), e);
 		}
+	}
+	
+	private String getSetting(String name, String defaultValue) {
+		return PreferenceManager.getDefaultSharedPreferences(this).getString(name, defaultValue);
 	}
 }

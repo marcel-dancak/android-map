@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
   xmlns:android="http://schemas.android.com/apk/res/android">
-  <EditTextPreference android:title="@string/layers_config_url_label"
+  <EditTextPreference
+  	android:title="@string/layers_config_url_label"
     android:defaultValue="http://"
     android:key="layers_config_url"
     android:summary="@string/layers_config_summary"
+  />
+  <ListPreference
+  	android:title="@string/screen_orientation_label"
+  	android:key="screen_orientation"
+    android:entries="@array/screen_orientations"
+    android:entryValues="@array/screen_orientations_values"
+    android:defaultValue="1"
+    android:negativeButtonText=""
   />
   
 </PreferenceScreen>
