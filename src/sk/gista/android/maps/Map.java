@@ -335,7 +335,7 @@ public class Map extends View implements TileListener, MapView {
 			break;
 		case MotionEvent.ACTION_DOWN:
 			//Log.i(TAG, "delta: "+(curTime - lastTouchTime));
-			if (curTime - lastTouchTime < 100) {
+			if (curTime - lastTouchTime > 40 && curTime - lastTouchTime < 150) {
 				Log.i(TAG, "Double click!");
 				PointF pos = screenToMap(x, y);
 				int newZoom = zoom + 1 < tmsLayer.getResolutions().length? zoom + 1 : zoom;
