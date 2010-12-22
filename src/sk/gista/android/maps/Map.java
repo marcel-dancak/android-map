@@ -454,6 +454,7 @@ public class Map extends View implements TileListener, MapView {
 		if (tmsLayer == null) {
 			return; // TODO: and what about overlays ?
 		}
+		
 		//canvas.scale(1, -1, width / 2f, height / 2f);
 		canvas.scale(1, -1);
 		canvas.translate(0, -height);
@@ -574,6 +575,7 @@ public class Map extends View implements TileListener, MapView {
 	
 	private void drawGraphicalScale(Canvas canvas) {
 		canvas.save();
+		canvas.translate(0, height-24);
 		scaleStyle.setColor(Color.GRAY);
 		scaleStyle.setAlpha(150);
 		canvas.drawRect(5, 4, 10+scaleWidth, 20, scaleStyle);
