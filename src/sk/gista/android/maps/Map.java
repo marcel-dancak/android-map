@@ -226,6 +226,9 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	public void recycle() {
+		if (tilesManager != null) {
+			tilesManager.cancelAll();
+		}
 		clearTiles();
 	}
 	
