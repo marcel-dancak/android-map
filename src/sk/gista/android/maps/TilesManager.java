@@ -24,6 +24,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import sk.gista.android.maps.Layer.Tile;
 import sk.gista.android.maps.Layer.TileListener;
+import sk.gista.android.utils.NetworkDebugger;
+import sk.gista.android.utils.NetworkDebugger.Signal;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -207,6 +209,7 @@ public class TilesManager {
 	
 	public void requestTiles2(List<Tile> tiles) {
 		System.out.println("Listeners: "+tileListeners);
+		Log.i(TAG, "requesting "+tiles.size()+" tiles");
 		for (Tile t : tiles) {
 			requestTile2(t);
 		}
@@ -263,16 +266,16 @@ public class TilesManager {
 	private static class Downloader extends AsyncTask<Tile, Integer, Tile> {
 		TilesManager manager;
 		TmsLayer layer;
+		Tile tile;
 		
 		@Override
 		protected Tile doInBackground(Tile... params) {
-			Tile tile = params[0]; 
-			URL url;
+			tile = params[0]; 
 			Bitmap image = null;
 			try {
-				
 				boolean method = true;
 				if (method) {
+					Log.i(TAG, layer.getUrl(tile));
 					HttpClient client = new DefaultHttpClient();
 					HttpGet get = new HttpGet(layer.getUrl(tile));
 					HttpResponse response = client.execute(get);
@@ -286,13 +289,17 @@ public class TilesManager {
 					InputStream is = entity.getContent();
 					byte [] content = inputStreamToByteArray(is);
 					if (content != null) {
+						NetworkDebugger.sendFinished(tile);
 						image = BitmapFactory.decodeByteArray(content, 0, content.length);
+					}
+					if (isCancelled()) {
+						NetworkDebugger.sendSignal(tile, Signal.ABORTED);
 					}
 					//image = BitmapFactory.decodeStream(is);
 					//Log.i(TAG, Thread.currentThread().getName()+" image "+image);
 					is.close();
 				} else {
-					url = new URL(layer.getUrl(tile));
+					URL url = new URL(layer.getUrl(tile));
 					HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
 					
 					InputStream is = httpCon.getInputStream();
@@ -316,7 +323,8 @@ public class TilesManager {
 
 			} catch (Exception e) {
 				Log.e(TAG, "what!", e);
-				e.printStackTrace();
+				Log.e(TAG, "sending error signal");
+				NetworkDebugger.sendSignal(tile, Signal.ERROR);
 			}
 			return new Tile(tile.getX(), tile.getY(), tile.getZoomLevel(), image);
 		}
@@ -338,6 +346,8 @@ public class TilesManager {
 			if (isCancelled()) {
 				return null;
 			}
+			int progress = 0;
+			NetworkDebugger.sendProgress(tile, progress, 0);
 			is = new BufferedInputStream(is);
 			ByteArrayOutputStream buf = new ByteArrayOutputStream();
 			byte[] buffer = new byte[512];
@@ -346,6 +356,8 @@ public class TilesManager {
 			while(result > 0 && !isCancelled()) {
 				buf.write(buffer, 0, result);
 				//Log.i(TAG, "reading incomplete data "+result);
+				NetworkDebugger.sendProgress(tile, progress, result);
+				progress++;
 				result = is.read(buffer);
 			}
 			
