@@ -7,15 +7,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -35,15 +27,13 @@ import android.util.Log;
 public class TilesManager {
 
 	private static final String TAG = TilesManager.class.getName();
-	
 	private List<TileListener> tileListeners = new ArrayList<TileListener>();
-	private ExecutorService pool = Executors.newFixedThreadPool(4);
-	private List<Tile> unproccessed = new ArrayList<Layer.Tile>();
-	
 	private TmsLayer layer;
 	
 	public TilesManager(TmsLayer layer) {
 		this.layer = layer;
+		NetworkDebugger.server = "192.168.1.110";
+		NetworkDebugger.debuggingEnabled = true;
 	}
 	
 	public void addTileListener(TileListener listener) {
@@ -61,159 +51,8 @@ public class TilesManager {
 			listener.onTileLoadingFailed(tile);
 		}
 	}
-
 	
-	BlockingQueue<Tile> queue = new LinkedBlockingQueue<Layer.Tile>(10);
-	
-	private void startLoop() {
-		Thread t = new Thread() {
-			@Override
-			public void run() {
-				boolean run = true;
-				while (run) {
-					final Tile t;
-					try {
-						t = queue.take();
-						//System.out.println("Taken tile");
-						//Thread.sleep(200);
-						
-						pool.submit(new Runnable() {
-							
-							Tile tile = t;
-							@Override
-							public void run() {
-								//System.out.println("task started");
-								process(tile);
-								//requestTile2(tile);
-							}
-						});
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					
-				}
-			}
-				
-		};
-		t.setPriority(Thread.MIN_PRIORITY);
-		t.start();
-	}
-	
-	
-	private final void process(Tile tile) {
-		/*
-		URL url;
-		try {
-			url = new URL(layer.getUrl(tile));
-			//Log.i(TAG, url.toString());
-			//System.out.println(url.toString());
-			HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-			//Log.i(TAG, "Content Type: "+httpCon.getContentType());
-			//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
-			InputStream is = httpCon.getInputStream();
-			//InputStream is = new PatchInputStream(httpCon.getInputStream());
-			//InputStream is = new FlushedInputStream(httpCon.getInputStream());
-			//InputStream is = new ByteArrayInputStream(convertInputStreamToByteArray(httpCon.getInputStream()));
-			//Bitmap image = BitmapFactory.decodeStream(is);
-			
-			byte [] content = inputStreamToByteArray(is);
-			Bitmap image = BitmapFactory.decodeByteArray(content, 0, content.length);
-			//BitmapFactory.Options options = new BitmapFactory.Options();
-			//options.
-			//Bitmap image = BitmapFactory.decodeStream(is);
-			//Bitmap image = BitmapFactory.decodeStream(is, null, new Options());
-			is.close();
-			//Log.i(TAG, url.toString());
-			//Log.i(TAG, "image "+image);
-			if (image != null) {
-				//Log.i(TAG, format("Get image %d x %d", image.getWidth(), image.getHeight()));
-				//tile.setImage(image);
-				//fireTileLoad(tile);
-				fireTileLoad(new Tile(tile.getX(), tile.getY(), tile.getZoomLevel(), image));
-				return;
-			}
-		} catch (Exception e) {
-			Log.e(TAG, "what!", e);
-			e.printStackTrace();
-		}
-		fireTileLoadingFailed(tile);
-		//fireTileLoadingFailed(new Tile(tile.getX(), tile.getY(), tile.getZoomLevel(), null));
-		 */
-	}
-	
-	public void requestTiles(List<Tile> tiles) {
-		for (final Tile t : tiles) {
-			pool.submit(new Runnable() {
-				
-				//Tile tile = t;
-				@Override
-				public void run() {								
-					process(t);
-				}
-			});
-		}
-	}
-	
-	public void requestTilesAsync(List<Tile> tiles) {
-		//System.out.println("REQUEST start"+tiles.size());
-		queue.addAll(tiles);
-		//System.out.println("REQUEST end");
-	}
-	
-	public void requestTile(final Tile tile) {
-		//synchronized (unproccessed) {
-			unproccessed.add(tile);
-			//unproccessed.notifyAll();
-		//}
-		/*
-		pool.submit(new Runnable() {
-			
-			@Override
-			public void run() {
-				process(tile);
-			}
-		});
-		*/
-		/*
-		Thread t = new Thread() {
-			public void run() {
-				URL url;
-				try {
-					String query = format("/1.0.0/%s/%d/%d/%d.%s", name, zoom, x, y, format);
-					url = new URL(serverUrl+"/"+query);
-					//Log.i(TAG, url.toString());
-					HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-					//Log.i(TAG, "Content Type: "+httpCon.getContentType());
-					//Log.i(TAG, "Content Length: "+httpCon.getContentLength());
-					
-					Bitmap image = BitmapFactory.decodeStream(httpCon.getInputStream());
-					//imageStream.close();
-					if (image != null) {
-						//Log.i(TAG, format("Get image %d x %d", image.getWidth(), image.getHeight()));
-						fireTileLoad(new Tile(x, y, zoom, image));
-						return;
-					}
-				} catch (Exception e) {
-					Log.e(TAG, "what!", e);
-					e.printStackTrace();
-				}
-				fireTileLoadingFailed(new Tile(x, y, zoom, null));
-			}
-		};
-		t.start();
-		*/
-	}
-	
-	private Queue<Runnable> tasks = new LinkedList<Runnable>();
 	private List<Downloader> downloaders = new ArrayList<Downloader>();
-	
-	public void requestTiles2(List<Tile> tiles) {
-		System.out.println("Listeners: "+tileListeners);
-		Log.i(TAG, "requesting "+tiles.size()+" tiles");
-		for (Tile t : tiles) {
-			requestTile2(t);
-		}
-	}
 	
 	public void cancelAll() {
 		Log.i(TAG, "Cancel all Requests!");
@@ -224,38 +63,15 @@ public class TilesManager {
 		}
 	}
 	
-	public void requestTile2(Tile tile) {
-		/*
-		for (Downloader d : downloaders) {
-			if (d.getStatus() == Status.FINISHED) {
-				d.layer = this;
-				d.execute(tile);
-				Log.i(TAG, "downloaders: "+downloaders.size());
-				return;
-			}
-		}*/
-		/*
-		int pending = 0;
-		int running = 0;
-		int finished = 0;
-		for (Downloader d : downloaders) {
-			switch (d.getStatus()) {
-			case PENDING:
-				pending++;
-				break;
-			case RUNNING:
-				running++;
-				break;
-			case FINISHED:
-				finished++;
-				break;
-			}
-			if (d.getStatus() == Status.PENDING) {
-				pending++;
-			}
+	public void requestTiles(List<Tile> tiles) {
+		System.out.println("Listeners: "+tileListeners);
+		Log.i(TAG, "requesting "+tiles.size()+" tiles");
+		for (Tile t : tiles) {
+			requestTile(t);
 		}
-		Log.i(TAG, "active downloaders: "+downloaders.size() + " Pending: "+pending + " Running: "+running+" Finished: "+finished);
-		*/
+	}
+	
+	public void requestTile(Tile tile) {
 		Downloader asyncDownloader = new Downloader();
 		downloaders.add(asyncDownloader);
 		asyncDownloader.layer = layer;
@@ -263,7 +79,7 @@ public class TilesManager {
 		asyncDownloader.execute(tile);
 	}
 	
-	private static class Downloader extends AsyncTask<Tile, Integer, Tile> {
+	public static class Downloader extends AsyncTask<Tile, Integer, Tile> {
 		TilesManager manager;
 		TmsLayer layer;
 		Tile tile;
@@ -272,12 +88,16 @@ public class TilesManager {
 		protected Tile doInBackground(Tile... params) {
 			tile = params[0]; 
 			Bitmap image = null;
-			try {
-				boolean method = true;
-				if (method) {
-					Log.i(TAG, layer.getUrl(tile));
-					HttpClient client = new DefaultHttpClient();
-					HttpGet get = new HttpGet(layer.getUrl(tile));
+			
+			boolean method = true;
+			
+			if (method) {
+				Log.i(TAG, layer.getUrl(tile));
+				HttpClient client = new DefaultHttpClient();
+				HttpGet get = new HttpGet(layer.getUrl(tile));
+				InputStream is = null;
+				boolean aborted = false;
+				try {
 					HttpResponse response = client.execute(get);
 					/*
 					for (Header header : response.getAllHeaders()) {
@@ -286,19 +106,37 @@ public class TilesManager {
 					*/
 					HttpEntity entity = response.getEntity();
 					//Log.i(TAG, "Content-length: "+entity.getContentLength());
-					InputStream is = entity.getContent();
+					is = entity.getContent();
 					byte [] content = inputStreamToByteArray(is);
 					if (content != null) {
 						NetworkDebugger.sendFinished(tile);
 						image = BitmapFactory.decodeByteArray(content, 0, content.length);
 					}
-					if (isCancelled()) {
-						NetworkDebugger.sendSignal(tile, Signal.ABORTED);
-					}
 					//image = BitmapFactory.decodeStream(is);
 					//Log.i(TAG, Thread.currentThread().getName()+" image "+image);
-					is.close();
-				} else {
+					
+					if (isCancelled()) {
+						NetworkDebugger.sendSignal(tile, Signal.ABORTED);
+						get.abort();
+						aborted = true;
+					}
+				} catch (Exception e) {
+					Log.e(TAG, "downloading failed!", e);
+					get.abort();
+					aborted = true;
+					NetworkDebugger.sendSignal(tile, Signal.ERROR);
+				} finally {
+					if (!aborted && is != null) {
+						try {
+							is.close();
+						} catch (IOException e) {
+							Log.e(TAG, "aborted: "+aborted);
+							Log.e(TAG, "closing input stream failed!", e);
+						}
+					}
+				}
+			} else {
+				try {
 					URL url = new URL(layer.getUrl(tile));
 					HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
 					
@@ -312,20 +150,22 @@ public class TilesManager {
 					*/
 					byte [] content = inputStreamToByteArray(is);
 					if (content != null) {
+						NetworkDebugger.sendFinished(tile);
 						image = BitmapFactory.decodeByteArray(content, 0, content.length);
+					}
+					if (isCancelled()) {
+						NetworkDebugger.sendSignal(tile, Signal.ABORTED);
 					}
 					//Log.i(TAG, Thread.currentThread().getName()+" content length: "+content.length);
 					is.close();
 					httpCon.disconnect();
+				} catch (Exception e) {
+					Log.e(TAG, "what!", e);
+					Log.e(TAG, "sending error signal");
+					NetworkDebugger.sendSignal(tile, Signal.ERROR);
 				}
-				
-				//Log.i(TAG, Thread.currentThread().getName()+" image "+image);
-
-			} catch (Exception e) {
-				Log.e(TAG, "what!", e);
-				Log.e(TAG, "sending error signal");
-				NetworkDebugger.sendSignal(tile, Signal.ERROR);
 			}
+			//Log.i(TAG, Thread.currentThread().getName()+" image "+image);
 			return new Tile(tile.getX(), tile.getY(), tile.getZoomLevel(), image);
 		}
 
@@ -350,13 +190,13 @@ public class TilesManager {
 			NetworkDebugger.sendProgress(tile, progress, 0);
 			is = new BufferedInputStream(is);
 			ByteArrayOutputStream buf = new ByteArrayOutputStream();
-			byte[] buffer = new byte[512];
+			byte[] buffer = new byte[1024];
 			int result = is.read(buffer);
 			
 			while(result > 0 && !isCancelled()) {
 				buf.write(buffer, 0, result);
 				//Log.i(TAG, "reading incomplete data "+result);
-				NetworkDebugger.sendProgress(tile, progress, result);
+				//NetworkDebugger.sendProgress(tile, progress, result);
 				progress++;
 				result = is.read(buffer);
 			}

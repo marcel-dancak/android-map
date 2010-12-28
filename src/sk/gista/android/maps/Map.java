@@ -523,7 +523,7 @@ public class Map extends View implements TileListener, MapView {
 					}
 					canvas.scale(1, -1, left, bottom+128);
 					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
-					//visualDebugger.drawTile(canvas, x, y);
+					visualDebugger.drawTile(canvas, x, y);
 					canvas.scale(1, -1, left, bottom+128);
 				} else {
 					notAvailableTiles++;
@@ -534,12 +534,9 @@ public class Map extends View implements TileListener, MapView {
 			showZoomBackground = false;
 		}
 		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
-		t1 = System.currentTimeMillis();
+		//t1 = System.currentTimeMillis();
 		if (neededTiles.size() > 0) {
-			//tmsLayer.requestTiles(neededTiles);
-			//tmsLayer.requestTilesAsync(neededTiles);
-			//tmsLayer.requestTiles2(neededTiles);
-			tilesManager.requestTiles2(neededTiles);
+			tilesManager.requestTiles(neededTiles);
 		}
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
