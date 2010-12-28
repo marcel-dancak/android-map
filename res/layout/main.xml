@@ -20,8 +20,8 @@
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:background="@drawable/btn_mylocation"
-		
 		android:focusable="false"
+		android:visibility="invisible"
 		/>
 	<Button
 		android:id="@+id/zoom_in"
@@ -29,6 +29,7 @@
 		android:layout_height="wrap_content"
 		android:focusable="false"
 		android:background="@android:drawable/btn_plus"
+		android:visibility="invisible"
 		/>
 	<Button
 		android:id="@+id/zoom_out"
@@ -36,6 +37,7 @@
 		android:layout_height="wrap_content"
 		android:background="@android:drawable/btn_minus"
 		android:focusable="false"
+		android:visibility="invisible"
 		/>
 
 </LinearLayout>

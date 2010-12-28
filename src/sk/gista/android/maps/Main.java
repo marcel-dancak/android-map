@@ -69,6 +69,7 @@ public class Main extends Activity implements SensorEventListener {
 	private MapView map;
 	private Button zoomIn;
 	private Button zoomOut;
+	private Button myLocation;
 	
 	List<TmsLayer> layers;
 	private LocationOverlay locationOverlay;
@@ -92,7 +93,7 @@ public class Main extends Activity implements SensorEventListener {
         
         zoomIn = (Button) findViewById(R.id.zoom_in);
         zoomOut = (Button) findViewById(R.id.zoom_out);
-        Button moveToCurrentLocation = (Button) findViewById(R.id.move_to_position);
+        myLocation = (Button) findViewById(R.id.move_to_position);
         
         zoomIn.setOnClickListener(new View.OnClickListener() {
 			
@@ -114,7 +115,7 @@ public class Main extends Activity implements SensorEventListener {
 			}
 		});
         
-        moveToCurrentLocation.setOnClickListener(new View.OnClickListener() {
+        myLocation.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
@@ -220,7 +221,7 @@ public class Main extends Activity implements SensorEventListener {
     	
     	for (TmsLayer layer : layers) {
     		if (layer.getName().equals(layerName)) {
-    			map.setLayer(layer);
+    			setMapLayer(layer);
         		if (centerX != Float.MIN_VALUE) {
         			Point2D wgs84Center = new Point2D(centerX, centerY);
         			Point2D center = new Point2D();
@@ -279,7 +280,7 @@ public class Main extends Activity implements SensorEventListener {
 			    		layer.getProjection().transform(wgs84Center, newCenter);
 			    		
 					}
-					map.setLayer(layer);
+					setMapLayer(layer);
 		    		if (newCenter != null) {
 		    			map.setCenter((float) newCenter.x, (float) newCenter.y);
 		    		}
@@ -330,6 +331,15 @@ public class Main extends Activity implements SensorEventListener {
 			//Log.i(TAG, "Selected item: "+list.getSelectedItem());
 			break;
 		}
+    }
+    
+    private void setMapLayer(TmsLayer layer) {
+    	if (map.getLayer() == null && layer != null) {
+    		zoomIn.setVisibility(View.VISIBLE);
+    		zoomOut.setVisibility(View.VISIBLE);
+    		myLocation.setVisibility(View.VISIBLE);
+    	}
+    	map.setLayer(layer);
     }
     
 	@Override
