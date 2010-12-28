@@ -76,17 +76,7 @@ public class Map extends View implements TileListener, MapView {
 		postInit();
 	}
 	
-	public Map(Context context, TmsLayer layer) {
-		super(context);
-		postInit();
-
-		if (layer != null) {
-			setLayer(layer);
-		}
-	}
-
 	private void postInit() {
-		Log.i(TAG, "Creating Map");
 		imagesStyle = new Paint();
 		imagesStyle.setFilterBitmap(true);
 		
@@ -523,7 +513,7 @@ public class Map extends View implements TileListener, MapView {
 					}
 					canvas.scale(1, -1, left, bottom+128);
 					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
-					visualDebugger.drawTile(canvas, x, y);
+					//visualDebugger.drawTile(canvas, x, y);
 					canvas.scale(1, -1, left, bottom+128);
 				} else {
 					notAvailableTiles++;
@@ -540,7 +530,11 @@ public class Map extends View implements TileListener, MapView {
 		}
 		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
-		canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
+		//Log.i("DEBUG", "zoom: "+zoom+ " resolution: "+getResolution()+" start.x "+startP.x+" end.x "+endP.x);
+		if (drawOverlays) {
+			mapStyle.setStrokeWidth(2f/zoomPinch);
+			canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
+		}
 		canvas.restore();
 		float fadeStrength = zoomPinch;
 		if (zoomPinch > 1f) {
