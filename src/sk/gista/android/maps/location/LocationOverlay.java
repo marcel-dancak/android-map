@@ -63,7 +63,7 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 	}
 
 	public Point2D getLastLocation() {
-		return currentLocationPoint;
+		return currentLocation != null? currentLocationPoint : null;
 	}
 	
 	@Override

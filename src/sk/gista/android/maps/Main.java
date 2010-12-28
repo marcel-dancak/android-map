@@ -121,9 +121,15 @@ public class Main extends Activity implements SensorEventListener {
 			@Override
 			public void onClick(View v) {
 				Point2D location = locationOverlay.getLastLocation();
-				Point2D projected = new Point2D();
-				map.getLayer().getProjection().transform(location, projected);
-				map.moveToLocation((float) projected.x, (float) projected.y);
+				if (location != null) {
+					Point2D projected = new Point2D();
+					map.getLayer().getProjection().transform(location, projected);
+					map.moveToLocation((float) projected.x, (float) projected.y);
+				} else {
+					// use center of the map
+					BBox bbox = map.getLayer().getBoundingBox();
+					map.moveToLocation((bbox.minX + bbox.maxX)/2f, (bbox.minY + bbox.maxY)/2f);
+				}
 			}
 		});
         
