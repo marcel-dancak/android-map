@@ -46,6 +46,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 public class Main extends Activity implements SensorEventListener {
 	private static final String TAG = Main.class.getName();
@@ -355,15 +356,16 @@ public class Main extends Activity implements SensorEventListener {
 	
 	private void loadLayersConfig() {
         layers = new ArrayList<TmsLayer>();
-        String settingUrl = PreferenceManager.getDefaultSharedPreferences(this).getString("layers_config_url", "");
-        
         try {
         	if (layersSetting == null) {
-        		//Log.i(TAG, "****** GET SETTNINGS FROM NET "+settingUrl);
+        		String settingUrl = getSetting("layers_config_url", "");
+        		if (settingUrl.length() == 0 || settingUrl.endsWith("://")) {
+        			Toast.makeText(this, "URL of layers configuration is not set", Toast.LENGTH_LONG).show();
+        			return;
+        		}
         		layersSetting = Utils.httpGet(settingUrl);
         	}
-			//String settings = Utils.httpGet(getString(R.string.settings_url));
-        	//String settings = Utils.readInputStream(getResources().openRawResource(R.raw.settings));
+
 			JSONArray json = new JSONArray(layersSetting);
 			for (int i = 0; i < json.length(); i++) {
 				JSONObject layer = json.getJSONObject(i);
@@ -399,11 +401,17 @@ public class Main extends Activity implements SensorEventListener {
 				Log.d(TAG, "Extension: "+extension);
 				Log.d(TAG, "Projection: "+srs);
 			}
-			
+        //catch (java.net.UnknownHostException e)
+        } catch (java.io.FileNotFoundException e) {
+        	Log.e(TAG, "Downloading of layers configuration failed: Invalid URL", e);
+        	Toast.makeText(this, "Invalid URL: "+e.getMessage(), Toast.LENGTH_LONG).show();
 		} catch (IOException e) {
-			Log.e(TAG, e.getMessage(), e);
+			Log.e(TAG, "Downloading of layers configuration failed", e);
+			Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
 		} catch (JSONException e) {
-			Log.e(TAG, e.getMessage(), e);
+			Log.e(TAG, "Layers configuration parsing failed", e);
+			Toast.makeText(this, "Layers configuration is not valid", Toast.LENGTH_LONG).show();
+			layersSetting = null;// don't save invalid configuration
 		}
 	}
 	
