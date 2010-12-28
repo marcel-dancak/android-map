@@ -285,6 +285,7 @@ public class Main extends Activity implements SensorEventListener {
 		    		if (newCenter != null) {
 		    			map.setCenter((float) newCenter.x, (float) newCenter.y);
 		    		}
+		    		((View) map).invalidate();
 				}
 			};
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
