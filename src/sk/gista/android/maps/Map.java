@@ -66,6 +66,8 @@ public class Map extends View implements TileListener, MapView {
 	private TmsVisualDebugger visualDebugger;
 	private boolean isMooving;
 	
+	private MapListener mapListener;
+	
 	public Map(Context context) {
 		super(context);
 		postInit();
@@ -200,6 +202,9 @@ public class Map extends View implements TileListener, MapView {
 			int oldZoom = this.zoom;
 			this.zoom = zoom;
 			onZoomChange(oldZoom, zoom);
+			if (mapListener != null) {
+				mapListener.onZoomChanged(zoom);
+			}
 			invalidate();
 		}
 	}
@@ -376,6 +381,10 @@ public class Map extends View implements TileListener, MapView {
 			isMooving = false;
 			wasZoom = false;
 			lastTouchTime = curTime;
+			// redraw map at the end, because when using timer, position on the map can be different
+			// (newer) than it is shown. And if rendering of smaller region occur (e.g. when redrawing
+			// control buttons), then this area will draw map on different position.
+			invalidate();
 			break;
 		case MotionEvent.ACTION_MOVE:
 			//Log.i(TAG, "ACTION_MOVE "+event.getPointerCount());
@@ -919,5 +928,10 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void redraw() {
 		invalidate();
+	}
+
+	@Override
+	public void setOnZoomChangeListener(MapListener listener) {
+		this.mapListener = listener;
 	}
 }

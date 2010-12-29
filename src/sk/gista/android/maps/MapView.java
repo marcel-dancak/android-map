@@ -25,7 +25,12 @@ public interface MapView extends AndroidComponent {
 	 */
 	void zoomTo(int zoom);
 	
+	void setOnZoomChangeListener(MapListener listener);
 	void redraw();
 	
 	void recycle();
+	
+	public interface MapListener {
+		void onZoomChanged(int zoom);
+	}
 }

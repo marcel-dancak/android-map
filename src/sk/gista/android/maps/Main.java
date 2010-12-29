@@ -13,6 +13,7 @@ import com.jhlabs.map.proj.Projection;
 import com.jhlabs.map.proj.ProjectionFactory;
 
 import sk.gista.android.app.About;
+import sk.gista.android.maps.MapView.MapListener;
 import sk.gista.android.maps.location.LocationOverlay;
 import sk.gista.android.settings.Settings;
 import sk.gista.android.utils.Utils;
@@ -42,7 +43,7 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class Main extends Activity implements SensorEventListener {
+public class Main extends Activity implements SensorEventListener, MapListener {
 	private static final String TAG = Main.class.getName();
 	
 	static final int DIALOG_LAYERS_ID = 0;
@@ -87,10 +88,13 @@ public class Main extends Activity implements SensorEventListener {
         locationOverlay= new LocationOverlay(this, map);// TODO: remove map parameter
         map.addOverlay(locationOverlay);
         
+        map.setOnZoomChangeListener(this);
+        
         controlPanel = findViewById(R.id.control_panel);
         zoomIn = (ImageButton) findViewById(R.id.zoom_in);
         zoomOut = (ImageButton) findViewById(R.id.zoom_out);
         myLocation = (ImageButton) findViewById(R.id.mylocation);
+        Log.i(TAG, "cache enabled: "+zoomOut.isDrawingCacheEnabled());
         
         zoomIn.setOnClickListener(new View.OnClickListener() {
 			
@@ -429,5 +433,13 @@ public class Main extends Activity implements SensorEventListener {
 	
 	private String getSetting(String name, String defaultValue) {
 		return PreferenceManager.getDefaultSharedPreferences(this).getString(name, defaultValue);
+	}
+
+	@Override
+	public void onZoomChanged(int zoom) {
+		int maxZoom = map.getLayer().getResolutions().length-1;
+		
+		zoomIn.setEnabled(zoom < maxZoom);
+		zoomOut.setEnabled(zoom > 0);
 	}
 }
