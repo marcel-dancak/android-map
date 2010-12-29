@@ -38,7 +38,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -62,9 +62,9 @@ public class Main extends Activity implements SensorEventListener {
 	
 	private SensorManager sensorManager;
 	private MapView map;
-	private Button zoomIn;
-	private Button zoomOut;
-	private Button myLocation;
+	private ImageButton zoomIn;
+	private ImageButton zoomOut;
+	private ImageButton myLocation;
 	
 	List<TmsLayer> layers;
 	private LocationOverlay locationOverlay;
@@ -86,9 +86,9 @@ public class Main extends Activity implements SensorEventListener {
         locationOverlay= new LocationOverlay(this, map);// TODO: remove map parameter
         map.addOverlay(locationOverlay);
         
-        zoomIn = (Button) findViewById(R.id.zoom_in);
-        zoomOut = (Button) findViewById(R.id.zoom_out);
-        myLocation = (Button) findViewById(R.id.move_to_position);
+        zoomIn = (ImageButton) findViewById(R.id.zoom_in);
+        zoomOut = (ImageButton) findViewById(R.id.zoom_out);
+        myLocation = (ImageButton) findViewById(R.id.move_to_position);
         
         zoomIn.setOnClickListener(new View.OnClickListener() {
 			

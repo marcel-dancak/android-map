@@ -12,33 +12,48 @@
 <LinearLayout
 	android:layout_height="wrap_content"
 	android:layout_width="wrap_content"
-	android:padding="4dp"
+	android:background="@drawable/ic_panel"
+	android:padding="0dip"
 	android:layout_alignParentRight="true"
 	android:layout_alignParentBottom="true" >
-	<Button
+	<ImageButton
 		android:id="@+id/move_to_position"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:background="@drawable/btn_mylocation"
+		android:background="@color/blank"
+		android:src="@drawable/btn_mylocation"
+		android:paddingLeft="20dip"
+		android:paddingRight="20dip"
+		android:paddingTop="5dip"
+		android:paddingBottom="5dip"
 		android:focusable="false"
 		android:visibility="invisible"
 		/>
-	<Button
+	<ImageButton
+		android:id="@+id/zoom_out"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:background="@color/blank"
+		android:src="@drawable/btn_zoom_out"
+		android:paddingLeft="20dip"
+		android:paddingRight="20dip"
+		android:paddingTop="5dip"
+		android:paddingBottom="5dip"
+		android:focusable="false"
+		android:visibility="invisible"
+		/>
+	<ImageButton
 		android:id="@+id/zoom_in"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:focusable="false"
-		android:background="@android:drawable/btn_plus"
+		android:background="@color/blank"
+		android:src="@drawable/btn_zoom_in"
+		android:paddingLeft="20dip"
+		android:paddingRight="20dip"
+		android:paddingTop="5dip"
+		android:paddingBottom="5dip"
 		android:visibility="invisible"
 		/>
-	<Button
-		android:id="@+id/zoom_out"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:background="@android:drawable/btn_minus"
-		android:focusable="false"
-		android:visibility="invisible"
-		/>
-
 </LinearLayout>
 </RelativeLayout>
