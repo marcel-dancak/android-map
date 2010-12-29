@@ -111,15 +111,17 @@ public class Map extends View implements TileListener, MapView {
 		if (tilesManager != null) {
 			tilesManager.cancelAll();
 		}
-		tilesManager = new TilesManager(layer);
-		tilesManager.addTileListener(this);
 		tmsLayer = layer;
-		bbox = layer.getBoundingBox();
-		center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
-
-		visualDebugger = new TmsVisualDebugger(this);
-		//setZoom(1);
-		onZoomChange(zoom, zoom);
+		if (layer != null) {
+			tilesManager = new TilesManager(layer);
+			tilesManager.addTileListener(this);
+			bbox = layer.getBoundingBox();
+			center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
+	
+			visualDebugger = new TmsVisualDebugger(this);
+			//setZoom(1);
+			onZoomChange(zoom, zoom);
+		}
 	}
 	
 	public int getZoom() {

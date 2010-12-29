@@ -10,14 +10,16 @@
 />
 
 <LinearLayout
+	android:id="@+id/control_panel"
 	android:layout_height="wrap_content"
 	android:layout_width="wrap_content"
 	android:background="@drawable/ic_panel"
 	android:padding="0dip"
 	android:layout_alignParentRight="true"
-	android:layout_alignParentBottom="true" >
+	android:layout_alignParentBottom="true"
+	android:visibility="invisible">
 	<ImageButton
-		android:id="@+id/move_to_position"
+		android:id="@+id/mylocation"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:background="@color/blank"
@@ -27,7 +29,6 @@
 		android:paddingTop="5dip"
 		android:paddingBottom="5dip"
 		android:focusable="false"
-		android:visibility="invisible"
 		/>
 	<ImageButton
 		android:id="@+id/zoom_out"
@@ -40,7 +41,6 @@
 		android:paddingTop="5dip"
 		android:paddingBottom="5dip"
 		android:focusable="false"
-		android:visibility="invisible"
 		/>
 	<ImageButton
 		android:id="@+id/zoom_in"
@@ -53,7 +53,6 @@
 		android:paddingRight="20dip"
 		android:paddingTop="5dip"
 		android:paddingBottom="5dip"
-		android:visibility="invisible"
 		/>
 </LinearLayout>
 </RelativeLayout>

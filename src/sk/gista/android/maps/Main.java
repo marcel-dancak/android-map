@@ -65,6 +65,7 @@ public class Main extends Activity implements SensorEventListener {
 	private ImageButton zoomIn;
 	private ImageButton zoomOut;
 	private ImageButton myLocation;
+	private View controlPanel;
 	
 	List<TmsLayer> layers;
 	private LocationOverlay locationOverlay;
@@ -86,9 +87,10 @@ public class Main extends Activity implements SensorEventListener {
         locationOverlay= new LocationOverlay(this, map);// TODO: remove map parameter
         map.addOverlay(locationOverlay);
         
+        controlPanel = findViewById(R.id.control_panel);
         zoomIn = (ImageButton) findViewById(R.id.zoom_in);
         zoomOut = (ImageButton) findViewById(R.id.zoom_out);
-        myLocation = (ImageButton) findViewById(R.id.move_to_position);
+        myLocation = (ImageButton) findViewById(R.id.mylocation);
         
         zoomIn.setOnClickListener(new View.OnClickListener() {
 			
@@ -151,7 +153,6 @@ public class Main extends Activity implements SensorEventListener {
     	Log.i(TAG, "** onResume");
     	//setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     	super.onResume();
-    	
     	
     	if (layers == null || layers.size() == 0) {
     		loadLayersConfig();
@@ -254,6 +255,11 @@ public class Main extends Activity implements SensorEventListener {
 			return true;
 		case R.id.settings:
 			startActivity(new Intent(this, Settings.class));
+			saveState();
+			layers = null;
+			layersSetting = null;
+			setMapLayer(null);
+			Log.i(TAG, " start act. zoom "+map.getZoom());
 			return true;
 		case R.id.about:
 			startActivity(new Intent(this, About.class));
@@ -340,9 +346,9 @@ public class Main extends Activity implements SensorEventListener {
     
     private void setMapLayer(TmsLayer layer) {
     	if (map.getLayer() == null && layer != null) {
-    		zoomIn.setVisibility(View.VISIBLE);
-    		zoomOut.setVisibility(View.VISIBLE);
-    		myLocation.setVisibility(View.VISIBLE);
+    		controlPanel.setVisibility(View.VISIBLE);
+    	} else {
+    		controlPanel.setVisibility(View.INVISIBLE);
     	}
     	map.setLayer(layer);
     }
@@ -408,14 +414,16 @@ public class Main extends Activity implements SensorEventListener {
         //catch (java.net.UnknownHostException e)
         } catch (java.io.FileNotFoundException e) {
         	Log.e(TAG, "Downloading of layers configuration failed: Invalid URL", e);
+        	layersSetting = null;
         	Toast.makeText(this, "Invalid URL: "+e.getMessage(), Toast.LENGTH_LONG).show();
 		} catch (IOException e) {
 			Log.e(TAG, "Downloading of layers configuration failed", e);
+			layersSetting = null;
 			Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
 		} catch (JSONException e) {
 			Log.e(TAG, "Layers configuration parsing failed", e);
-			Toast.makeText(this, "Layers configuration is not valid", Toast.LENGTH_LONG).show();
 			layersSetting = null;// don't save invalid configuration
+			Toast.makeText(this, "Layers configuration is not valid", Toast.LENGTH_LONG).show();
 		}
 	}
 	
