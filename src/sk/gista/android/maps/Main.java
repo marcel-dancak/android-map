@@ -227,7 +227,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
     	
     	for (TmsLayer layer : layers) {
     		if (layer.getName().equals(layerName)) {
-    			setMapLayer(layer);
+    			map.setLayer(layer);
         		if (centerX != Float.MIN_VALUE) {
         			Point2D wgs84Center = new Point2D(centerX, centerY);
         			Point2D center = new Point2D();
@@ -239,7 +239,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
     		}
     	}
     	if (map.getLayer() == null && layers.size() > 0) {
-    		setMapLayer(layers.get(0));
+    		map.setLayer(layers.get(0));
     	}
     }
     
@@ -262,7 +262,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 			saveState();
 			layers = null;
 			layersSetting = null;
-			setMapLayer(null);
+			map.setLayer(null);
 			Log.i(TAG, " start act. zoom "+map.getZoom());
 			return true;
 		case R.id.about:
@@ -294,7 +294,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 			    		layer.getProjection().transform(wgs84Center, newCenter);
 			    		
 					}
-					setMapLayer(layer);
+					map.setLayer(layer);
 		    		if (newCenter != null) {
 		    			map.setCenter((float) newCenter.x, (float) newCenter.y);
 		    		}
@@ -346,15 +346,6 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 			//Log.i(TAG, "Selected item: "+list.getSelectedItem());
 			break;
 		}
-    }
-    
-    private void setMapLayer(TmsLayer layer) {
-    	if (map.getLayer() == null && layer != null) {
-    		controlPanel.setVisibility(View.VISIBLE);
-    	} else {
-    		controlPanel.setVisibility(View.INVISIBLE);
-    	}
-    	map.setLayer(layer);
     }
     
 	@Override
@@ -441,5 +432,10 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 		
 		zoomIn.setEnabled(zoom < maxZoom);
 		zoomOut.setEnabled(zoom > 0);
+	}
+
+	@Override
+	public void onLayerChanged(TmsLayer layer) {
+    	controlPanel.setVisibility(layer == null? View.INVISIBLE : View.VISIBLE);
 	}
 }

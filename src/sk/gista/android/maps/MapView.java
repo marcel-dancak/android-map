@@ -31,6 +31,7 @@ public interface MapView extends AndroidComponent {
 	void recycle();
 	
 	public interface MapListener {
+		void onLayerChanged(TmsLayer layer);
 		void onZoomChanged(int zoom);
 	}
 }
