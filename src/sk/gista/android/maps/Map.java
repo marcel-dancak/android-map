@@ -21,7 +21,9 @@ import android.view.View;
 
 import sk.gista.android.maps.Layer.Tile;
 import sk.gista.android.maps.Layer.TileListener;
-import sk.gista.android.utils.MyAnimation;
+import sk.gista.android.utils.Animator;
+import sk.gista.android.utils.Animator.CompositeAnimation;
+import sk.gista.android.utils.Animator.CustomAnimation;
 import sk.gista.android.utils.TmsVisualDebugger;
 import sk.gista.android.utils.Utils;
 
@@ -135,62 +137,10 @@ public class Map extends View implements TileListener, MapView {
 			return;
 		}
 		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
-			final float endZoomPinch = getResolution() / (float) getLayer().getResolutions()[zoom];
-			MyAnimation animation = new MyAnimation(350, 6);
-			animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
-				
-				@Override
-				public void onFrame(final float fraction) {
-					//Log.i(TAG, "fraction: "+fraction);
-					post(new Runnable() {
-						
-						@Override
-						public void run() {
-							zoomPinch = 1f + (endZoomPinch-1f)*fraction;
-							post(new Runnable() {
-								
-								@Override
-								public void run() {
-									invalidate();
-								}
-							});
-						}
-					});
-				}
-				
-				@Override
-				public void onEnd() {
-					
-					post(new Runnable() {
-						
-						@Override
-						public void run() {
-							if (zoomBackground == null) {
-								Log.i(TAG, "createBackgroundImage "+width+" x "+height);
-								zoomBackground = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-							}
-							
-							Canvas canvas = new Canvas(zoomBackground);
-							zoomBgStart.x = center.x;
-							zoomBgStart.y = center.y;
-							showZoomBackground = false;
-							drawOverlays = false;
-							drawGraphicalScale = false;
-							//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
-							onDraw(canvas);
-							drawOverlays = true;
-							drawGraphicalScale = true;
-							
-							zoomPinch = 1f;
-							if (Map.this.zoom != zoom) {
-								showZoomBackground = true;
-							}
-							setZoom(zoom);
-						}
-					});
-				}
-			});
-			animation.start();
+			ZoomAnimation animation = new ZoomAnimation(zoom);
+			Animator animator = new Animator(350, 6, animation);
+			animator.setView(this);
+			animator.start();
 		}
 	}
 	
@@ -665,88 +615,11 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	private void onZoomPinchEnd() {
-		
-		final int closestZoomLevel = getClosestZoomLevel(zoomPinch);
-		final float endZoomPinch = (float) (tmsLayer.getResolutions()[zoom]/tmsLayer.getResolutions()[closestZoomLevel]);
-		//Log.i(TAG, "actual zoom pinch: "+zoomPinch +" calculated: "+endZoomPinch);
-		
-		
-		final float startZoomPinch = zoomPinch;
-		MyAnimation animation = new MyAnimation(300, 5);
-		animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
-			
-			@Override
-			public void onFrame(final float fraction) {
-				//Log.i(TAG, "my animation "+fraction);
-				post(new Runnable() {
-					
-					@Override
-					public void run() {
-						zoomPinch = startZoomPinch + (endZoomPinch-startZoomPinch)*fraction;
-						invalidate();
-					}
-				});
-			}
-			
-			@Override
-			public void onEnd() {
-				//Log.i(TAG, "onEnd");
-				post(new Runnable() {
-					
-					@Override
-					public void run() {
-						if (zoomBackground == null) {
-							//Log.i(TAG, "createBackgroundImage "+width+" x "+height);
-							zoomBackground = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-						}
-						
-						Canvas canvas = new Canvas(zoomBackground);
-						zoomBgStart.x = center.x;
-						zoomBgStart.y = center.y;
-						showZoomBackground = false;
-						drawOverlays = false;
-						drawGraphicalScale = false;
-						//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
-						onDraw(canvas);
-						drawOverlays = true;
-						drawGraphicalScale = true;
-						
-						zoomPinch = 1f;
-						if (zoom != closestZoomLevel) {
-							showZoomBackground = true;
-						}
-						setZoom(closestZoomLevel);
-					}
-				});
-			}
-		});
-		animation.start();
-		/*
-		TranslateAnimation anim = new TranslateAnimation(0, 1, 0 ,1);
-		anim.setInterpolator(new LinearInterpolator());
-		anim.setDuration(1000);
-		anim.setRepeatCount(20);
-		
-		anim.setAnimationListener(new Animation.AnimationListener() {
-			
-			@Override
-			public void onAnimationStart(Animation animation) {
-				Log.i(TAG, "onAnimationStart");
-			}
-			
-			@Override
-			public void onAnimationRepeat(Animation animation) {
-				Log.i(TAG, "onAnimationRepeat");
-			}
-			
-			@Override
-			public void onAnimationEnd(Animation animation) {
-				Log.i(TAG, "onAnimationEnd");
-			}
-		});
-		Log.i(TAG, "start animation ... ");
-		anim.start();
-		*/
+		int closestZoomLevel = getClosestZoomLevel(zoomPinch);
+		ZoomAnimation animation = new ZoomAnimation(closestZoomLevel);
+		Animator animator = new Animator(350, 5, animation);
+		animator.setView(this);
+		animator.start();
 	}
 	
 	public void addOverlay(Overlay overlay) {
@@ -775,40 +648,16 @@ public class Map extends View implements TileListener, MapView {
 
 	@Override
 	public void moveToLocation(final float x, final float y) {
-		final float startX = center.x;
-		final float startY = center.y;
-		
 		int screenDistance = (int) (Utils.distance(x, y, center.x, center.y)/getResolution());
 		//Log.i(TAG, "distance: "+screenDistance+" px");
 		int maxAnimDistance = 2 * (int) Math.sqrt(width*width+height*height);
 		
 		if (screenDistance < maxAnimDistance) {
-		
 			float fraction = (screenDistance/(float) maxAnimDistance);
-			
-			MyAnimation animation = new MyAnimation(100+(int) (500*fraction), 2+(int)(10*fraction));
-			animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
-				
-				@Override
-				public void onFrame(final float fraction) {
-					
-					post(new Runnable() {
-						
-						@Override
-						public void run() {
-							center.x = startX + (x-startX)*fraction;
-							center.y = startY + (y-startY)*fraction;
-							invalidate();
-						}
-					});
-				}
-				
-				@Override
-				public void onEnd() {
-					
-				}
-			});
-			animation.start();
+			MoveAnimation animation = new MoveAnimation(x, y);
+			Animator animator = new Animator(100+(int) (500*fraction), 2+(int)(10*fraction), animation);
+			animator.setView(this);
+			animator.start();
 		} else {
 			center.x = x;
 			center.y = y;
@@ -817,62 +666,15 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	private void moveAndZoom(final float x, final float y, final int zoom) {
-		final float startX = center.x;
-		final float startY = center.y;
-		final float endZoomPinch = getResolution() / (float) getLayer().getResolutions()[zoom];
+		MoveAnimation moveAnim = new MoveAnimation(x, y);
+		ZoomAnimation zoomAnim = new ZoomAnimation(zoom);
+		CompositeAnimation animation = new CompositeAnimation();
+		animation.addAnimation(moveAnim);
+		animation.addAnimation(zoomAnim);
 		
-		MyAnimation animation = new MyAnimation(350, 6);
-		animation.onAnimationStep(new MyAnimation.MyAnimationListener() {
-			
-			@Override
-			public void onFrame(final float fraction) {
-				//Log.i(TAG, "fraction: "+fraction);
-				post(new Runnable() {
-					
-					@Override
-					public void run() {
-						center.x = startX + (x-startX)*fraction;
-						center.y = startY + (y-startY)*fraction;
-						zoomPinch = 1f + (endZoomPinch-1f)*fraction;
-						//Log.i(TAG, "Zoom pinch: "+zoomPinch);
-						invalidate();
-					}
-				});
-			}
-			
-			@Override
-			public void onEnd() {
-				
-				post(new Runnable() {
-					
-					@Override
-					public void run() {
-						if (zoomBackground == null) {
-							Log.i(TAG, "createBackgroundImage "+width+" x "+height);
-							zoomBackground = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-						}
-						
-						Canvas canvas = new Canvas(zoomBackground);
-						zoomBgStart.x = center.x;
-						zoomBgStart.y = center.y;
-						showZoomBackground = false;
-						drawOverlays = false;
-						drawGraphicalScale = false;
-						//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
-						onDraw(canvas);
-						drawOverlays = true;
-						drawGraphicalScale = true;
-						
-						zoomPinch = 1f;
-						if (Map.this.zoom != zoom) {
-							showZoomBackground = true;
-						}
-						setZoom(zoom);
-					}
-				});
-			}
-		});
-		animation.start();
+		Animator animator = new Animator(350, 6, animation);
+		animator.setView(this);
+		animator.start();
 	}
 
 	@Override
@@ -883,5 +685,74 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void setOnZoomChangeListener(MapListener listener) {
 		this.mapListener = listener;
+	}
+	
+	
+	class MoveAnimation implements CustomAnimation {
+
+		private float startX;
+		private float startY;
+		private float x;
+		private float y;
+		
+		public MoveAnimation(float x, float y) {
+			this.x = x;
+			this.y = y;
+			startX = center.x;
+			startY = center.y;
+		}
+		
+		@Override
+		public void onFrame(float fraction) {
+			center.x = startX + (x-startX)*fraction;
+			center.y = startY + (y-startY)*fraction;
+		}
+
+		@Override
+		public void onEnd() {}
+		
+	}
+	
+	class ZoomAnimation implements CustomAnimation {
+
+		private int zoom;
+		private float endZoomPinch;
+		private float startZoomPinch;
+		
+		public ZoomAnimation(int zoom) {
+			this.zoom = zoom;
+			endZoomPinch = getResolution() / (float) getLayer().getResolutions()[zoom];
+			startZoomPinch = zoomPinch;
+		}
+		
+		@Override
+		public void onFrame(final float fraction) {
+			zoomPinch = startZoomPinch + (endZoomPinch-startZoomPinch)*fraction;
+		}
+		
+		@Override
+		public void onEnd() {
+			if (zoomBackground == null) {
+				Log.i(TAG, "createBackgroundImage "+width+" x "+height);
+				zoomBackground = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+			}
+			
+			Canvas canvas = new Canvas(zoomBackground);
+			zoomBgStart.x = center.x;
+			zoomBgStart.y = center.y;
+			showZoomBackground = false;
+			drawOverlays = false;
+			drawGraphicalScale = false;
+			//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
+			onDraw(canvas);
+			drawOverlays = true;
+			drawGraphicalScale = true;
+			
+			zoomPinch = 1f;
+			if (Map.this.zoom != zoom) {
+				showZoomBackground = true;
+			}
+			setZoom(zoom);
+		}
 	}
 }
