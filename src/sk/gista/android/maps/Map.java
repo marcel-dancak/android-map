@@ -1,7 +1,6 @@
 package sk.gista.android.maps;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,7 +27,7 @@ import sk.gista.android.utils.Utils;
 
 public class Map extends View implements TileListener, MapView {
 
-	private static String TAG = Map.class.getName();
+	private static String TAG = Map.class.getSimpleName();
 
 	private PointF center;
 	private BBox bbox;
@@ -44,7 +43,8 @@ public class Map extends View implements TileListener, MapView {
 
 	//private List<Layer> layers = Collections.emptyList();
 	private TmsLayer tmsLayer;
-	private java.util.Map<String, Tile> tiles = new HashMap<String, Tile>();
+	private MemoryCache tilesCache = new MemoryCache(this, 35);
+	
 	private TilesManager tilesManager;
 	private List<Overlay> overlays;
 	
@@ -108,7 +108,7 @@ public class Map extends View implements TileListener, MapView {
 	
 	public void setLayer(TmsLayer layer) {
 		if (tmsLayer != layer) {
-			clearTiles();
+			tilesCache.clearCache();
 			if (tilesManager != null) {
 				tilesManager.cancelAll();
 			}
@@ -227,14 +227,14 @@ public class Map extends View implements TileListener, MapView {
 		if (tilesManager != null) {
 			tilesManager.cancelAll();
 		}
-		clearTiles();
+		tilesCache.clearCache();
 	}
 	
 	private int size;
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.i(TAG, format("width: %d height: %d", w, h));
-		Log.i(TAG, "Cached tiles: "+tiles.size());
+		Log.i(TAG, "Cached tiles: "+tilesCache.size());
 		if (zoomBackground != null) {
 			zoomBackground.recycle();
 			zoomBackground = null;
@@ -249,7 +249,7 @@ public class Map extends View implements TileListener, MapView {
 		tileWidth = tmsLayer.getTileWidth() * getResolution();
 		tileHeight = tmsLayer.getTileHeight() * getResolution();
 		tilesManager.cancelAll();
-		clearTiles();
+		tilesCache.clearCache();
 		
 		//double factor = 39.3701; // meters
 		//double scale = getResolution()* 72.0 * factor;
@@ -267,16 +267,6 @@ public class Map extends View implements TileListener, MapView {
 
 	public TmsLayer getLayer() {
 		return tmsLayer;
-	}
-	
-	private void clearTiles() {
-		Log.i(TAG, "Clearing tiles");
-		synchronized (tiles) {
-			for (Tile tile : tiles.values()) {
-				tile.recycle();
-			}
-			tiles.clear();
-		}
 	}
 	
 	private PointF centerAtDragStart;
@@ -505,14 +495,10 @@ public class Map extends View implements TileListener, MapView {
 		int notAvailableTiles = 0;
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
-				String tileKey = tileKey(x, y);
-				Tile tile = null;
-				if (tiles.containsKey(tileKey)) {
-					tile = tiles.get(tileKey);
-				} else {
-					//tmsLayer.requestTile(zoom, x, y, tileWidthPx, tileHeightPx);
+				Tile tile = tilesCache.getTile(x, y);
+				if (tile == null) {
 					tile = new Tile(x, y, zoom, null);
-					tiles.put(tileKey, tile);
+					tilesCache.putTile(tile);
 					if (zoomPinch == 1f) {
 						neededTiles.add(tile);
 					}
@@ -597,10 +583,10 @@ public class Map extends View implements TileListener, MapView {
 	private Point getTileAtScreen(int x, int y) {
 		assert x <= width && y <= height : "point outside the screen";
 		PointF mapPos = screenToMap(x, y);
-		// Log.i(TAG, format("mapPos %f, %f", mapPos.x, mapPos.y));
-		float tileX = (mapPos.x - bbox.minX) / tileWidth;
-		float tileY = (mapPos.y - bbox.minY) / tileHeight;
-		return new Point((int) Math.floor(tileX), (int) Math.floor(tileY));
+		//float tileX = (mapPos.x - bbox.minX) / tileWidth;
+		//float tileY = (mapPos.y - bbox.minY) / tileHeight;
+		//return new Point((int) Math.floor(tileX), (int) Math.floor(tileY));
+		return tmsLayer.getTileAt(mapPos, zoom);
 	}
 
 	private PointF screenToMap2(float x, float y) {
@@ -652,29 +638,12 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void onTileLoad(Tile tile) {
 		// throw away tiles with not actual zoom level (delayed)
-		//Log.i(TAG, "onTileLoad: "+tile);
+		Log.i(TAG, "onTileLoad: "+tile);
 		if (tile.getZoomLevel() != zoom) {
 			tile.recycle();
 			return;
 		}
-		String tileKey = tileKey(tile.getX(), tile.getY());
-		synchronized (tiles) {
-			if (tiles.size() > 35) {
-				Point centerTile = getTileAtScreen(width/2, height/2);
-				while (tiles.size() > 35) {
-					Tile mostFarAway = tiles.values().iterator().next();
-					for (Tile t : tiles.values()) {
-						if (Math.abs(centerTile.x-t.getX())+Math.abs(centerTile.y-t.getY()) >
-								Math.abs(centerTile.x-mostFarAway.getX())+Math.abs(centerTile.y-mostFarAway.getY())) {
-							mostFarAway = t;
-						}
-					}
-					mostFarAway.recycle();
-					tiles.remove(tileKey(mostFarAway.getX(), mostFarAway.getY()));
-				}
-			}
-			tiles.put(tileKey, tile);
-		}
+		tilesCache.putTile(tile);
 		if (! isMooving) {
 			post(new Runnable() {
 				
@@ -688,17 +657,10 @@ public class Map extends View implements TileListener, MapView {
 
 	@Override
 	public void onTileLoadingFailed(Tile tile) {
-		String tileKey = tileKey(tile.getX(), tile.getY());
 		Log.w(TAG, "onTileLoadingFailed: "+tile);
-		if (tiles.containsKey(tileKey)) {
-			tiles.remove(tileKey);
-		}
+		tilesCache.remove(tile);
 	}
 	
-	private static final String tileKey(int x, int y) {
-		return x+":"+y;
-	}
-
 	private int getClosestZoomLevel(double newZoom) {
 		double newResolution = tmsLayer.getResolutions()[zoom]/newZoom;
 		double closestResolutionDistance = tmsLayer.getResolutions()[0];

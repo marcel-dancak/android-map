@@ -1,5 +1,8 @@
 package sk.gista.android.maps;
 
+import android.graphics.Point;
+import android.graphics.PointF;
+
 import com.jhlabs.map.proj.Projection;
 
 public class TmsLayer extends Layer {
@@ -53,4 +56,9 @@ public class TmsLayer extends Layer {
 		return tileHeight;
 	}
 	
+	public Point getTileAt(PointF position, int zoom) {
+		float tileX = (position.x - bbox.minX) / (tileWidth*(float) resolutions[zoom]);
+		float tileY = (position.y - bbox.minY) / (tileHeight*(float) resolutions[zoom]);
+		return new Point((int) Math.floor(tileX), (int) Math.floor(tileY));
+	}
 }
