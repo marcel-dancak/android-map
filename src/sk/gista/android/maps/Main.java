@@ -51,6 +51,13 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 	// temporary state values
 	static final String LAYERS_LIST = "LAYERS_LIST";
 	
+	// settings
+	static final String SCREEN_ORIENTATION_SETTING = "screen_orientation";
+	static final String LAYERS_URL_SETTING = "layers_config_url";
+	
+	// settings default values
+	static final String SCREEN_ORIENTATION_DEFAULT = "1";
+	
 	// persistent state values
 	static final String ZOOM = "map_zoom";
 	static final String LAYER_NAME = "layer_name";
@@ -145,7 +152,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
     protected void onStart() {
     	Log.i(TAG, "** onStart");
     	super.onStart();
-    	int orientation = Integer.parseInt(getSetting("screen_orientation", "1"));
+    	int orientation = Integer.parseInt(getSetting(SCREEN_ORIENTATION_SETTING, SCREEN_ORIENTATION_DEFAULT));
     	if (orientation != getRequestedOrientation()) {
     		setRequestedOrientation(orientation);
     	}
@@ -302,7 +309,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 				}
 			};
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setTitle("Select Layer");
+			builder.setTitle(R.string.select_layer_label);
 			builder.setItems(new String[0], listener);
 			AlertDialog layersDialog = builder.create();
 			dialog = layersDialog;
@@ -363,9 +370,9 @@ public class Main extends Activity implements SensorEventListener, MapListener {
         layers = new ArrayList<TmsLayer>();
         try {
         	if (layersSetting == null) {
-        		String settingUrl = getSetting("layers_config_url", "");
+        		String settingUrl = getSetting(LAYERS_URL_SETTING, "");
         		if (settingUrl.length() == 0 || settingUrl.endsWith("://")) {
-        			Toast.makeText(this, "URL of layers configuration is not set", Toast.LENGTH_LONG).show();
+        			Toast.makeText(this, R.string.missing_layers_config_url_message, Toast.LENGTH_LONG).show();
         			return;
         		}
         		layersSetting = Utils.httpGet(settingUrl);
@@ -418,7 +425,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 		} catch (JSONException e) {
 			Log.e(TAG, "Layers configuration parsing failed", e);
 			layersSetting = null;// don't save invalid configuration
-			Toast.makeText(this, "Layers configuration is not valid", Toast.LENGTH_LONG).show();
+			Toast.makeText(this, R.string.layers_config_not_valid_message, Toast.LENGTH_LONG).show();
 		}
 	}
 	
