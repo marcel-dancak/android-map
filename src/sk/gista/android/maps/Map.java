@@ -21,11 +21,10 @@ import android.view.View;
 
 import sk.gista.android.maps.Layer.Tile;
 import sk.gista.android.maps.Layer.TileListener;
-import sk.gista.android.utils.Animator;
-import sk.gista.android.utils.Animator.CompositeAnimation;
-import sk.gista.android.utils.Animator.CustomAnimation;
+import sk.gista.android.utils.CustomAnimation;
 import sk.gista.android.utils.TmsVisualDebugger;
 import sk.gista.android.utils.Utils;
+import sk.gista.android.utils.CustomAnimation.CompositeAnimation;
 
 public class Map extends View implements TileListener, MapView {
 
@@ -138,9 +137,10 @@ public class Map extends View implements TileListener, MapView {
 		}
 		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
 			ZoomAnimation animation = new ZoomAnimation(zoom);
-			Animator animator = new Animator(350, 6, animation);
-			animator.setView(this);
-			animator.start();
+			animation.setDuration(350);
+			animation.setFramesCount(6);
+			animation.setView(this);
+			animation.start();
 		}
 	}
 	
@@ -155,7 +155,6 @@ public class Map extends View implements TileListener, MapView {
 			if (mapListener != null) {
 				mapListener.onZoomChanged(zoom);
 			}
-			invalidate();
 		}
 	}
 
@@ -617,9 +616,10 @@ public class Map extends View implements TileListener, MapView {
 	private void onZoomPinchEnd() {
 		int closestZoomLevel = getClosestZoomLevel(zoomPinch);
 		ZoomAnimation animation = new ZoomAnimation(closestZoomLevel);
-		Animator animator = new Animator(350, 5, animation);
-		animator.setView(this);
-		animator.start();
+		animation.setDuration(350);
+		animation.setFramesCount(5);
+		animation.setView(this);
+		animation.start();
 	}
 	
 	public void addOverlay(Overlay overlay) {
@@ -655,9 +655,10 @@ public class Map extends View implements TileListener, MapView {
 		if (screenDistance < maxAnimDistance) {
 			float fraction = (screenDistance/(float) maxAnimDistance);
 			MoveAnimation animation = new MoveAnimation(x, y);
-			Animator animator = new Animator(100+(int) (500*fraction), 2+(int)(10*fraction), animation);
-			animator.setView(this);
-			animator.start();
+			animation.setDuration(100+(int) (500*fraction));
+			animation.setFramesCount(2+(int)(10*fraction));
+			animation.setView(this);
+			animation.start();
 		} else {
 			center.x = x;
 			center.y = y;
@@ -668,13 +669,12 @@ public class Map extends View implements TileListener, MapView {
 	private void moveAndZoom(final float x, final float y, final int zoom) {
 		MoveAnimation moveAnim = new MoveAnimation(x, y);
 		ZoomAnimation zoomAnim = new ZoomAnimation(zoom);
-		CompositeAnimation animation = new CompositeAnimation();
+		CompositeAnimation animation = new CompositeAnimation(350, 6);
 		animation.addAnimation(moveAnim);
 		animation.addAnimation(zoomAnim);
 		
-		Animator animator = new Animator(350, 6, animation);
-		animator.setView(this);
-		animator.start();
+		animation.setView(this);
+		animation.start();
 	}
 
 	@Override
@@ -688,7 +688,7 @@ public class Map extends View implements TileListener, MapView {
 	}
 	
 	
-	class MoveAnimation implements CustomAnimation {
+	class MoveAnimation extends CustomAnimation {
 
 		private float startX;
 		private float startY;
@@ -710,10 +710,9 @@ public class Map extends View implements TileListener, MapView {
 
 		@Override
 		public void onEnd() {}
-		
 	}
 	
-	class ZoomAnimation implements CustomAnimation {
+	class ZoomAnimation extends CustomAnimation {
 
 		private int zoom;
 		private float endZoomPinch;

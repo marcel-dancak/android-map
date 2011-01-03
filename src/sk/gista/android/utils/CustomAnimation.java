@@ -7,19 +7,28 @@ import java.util.TimerTask;
 
 import android.view.View;
 
-public class Animator extends TimerTask {
+public abstract class CustomAnimation extends TimerTask {
 
 	private int duration;
 	private int count;
 	private int frame;
 	private Timer timer;
-	private CustomAnimation animation;
-	private View view; // can be list later
+	private View view;
 	
-	public Animator(int duration, int count, CustomAnimation animation) {
+	public CustomAnimation() {
+	}
+	
+	public CustomAnimation(int duration, int count) {
 		this.duration = duration;
 		this.count = count;
-		this.animation = animation;
+	}
+	
+	public void setDuration(int duration) {
+		this.duration = duration;
+	}
+	
+	public void setFramesCount(int count) {
+		this.count = count;
 	}
 	
 	/**
@@ -48,7 +57,7 @@ public class Animator extends TimerTask {
 			view.post(new Runnable() {
 				@Override
 				public void run() {
-					animation.onEnd();
+					onEnd();
 					view.invalidate();
 				}
 			});
@@ -58,19 +67,21 @@ public class Animator extends TimerTask {
 				
 				@Override
 				public void run() {
-					animation.onFrame(fraction);
+					onFrame(fraction);
 					view.invalidate();
 				}
 			});
 		}
 	}
 	
-	public interface CustomAnimation {
-		void onFrame(float fraction);
-		void onEnd();
-	}
+	public abstract void onFrame(float fraction);
+	public abstract void onEnd();
 	
-	public static class CompositeAnimation implements CustomAnimation {
+	public static class CompositeAnimation extends CustomAnimation {
+
+		public CompositeAnimation(int duration, int count) {
+			super(duration, count);
+		}
 
 		private List<CustomAnimation> animations = new ArrayList<CustomAnimation>(5);
 		
