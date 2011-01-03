@@ -41,9 +41,7 @@ public class Map extends View implements TileListener, MapView {
 	private int width;
 	private int height;
 
-	//private List<Layer> layers = Collections.emptyList();
 	private TmsLayer tmsLayer;
-	private MemoryCache tilesCache = new MemoryCache(this, 35);
 	
 	private TilesManager tilesManager;
 	private List<Overlay> overlays;
@@ -108,13 +106,14 @@ public class Map extends View implements TileListener, MapView {
 	
 	public void setLayer(TmsLayer layer) {
 		if (tmsLayer != layer) {
-			tilesCache.clearCache();
+			
 			if (tilesManager != null) {
 				tilesManager.cancelAll();
+				tilesManager.clearCache();
 			}
 			tmsLayer = layer;
 			if (layer != null) {
-				tilesManager = new TilesManager(layer);
+				tilesManager = new TilesManager(this);
 				tilesManager.addTileListener(this);
 				bbox = layer.getBoundingBox();
 				center = new PointF((bbox.minX + bbox.maxX) / 2f, (bbox.minY + bbox.maxY) / 2f);
@@ -226,15 +225,15 @@ public class Map extends View implements TileListener, MapView {
 	public void recycle() {
 		if (tilesManager != null) {
 			tilesManager.cancelAll();
+			tilesManager.clearCache();
 		}
-		tilesCache.clearCache();
 	}
 	
 	private int size;
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.i(TAG, format("width: %d height: %d", w, h));
-		Log.i(TAG, "Cached tiles: "+tilesCache.size());
+		//Log.i(TAG, "Cached tiles: "+tilesCache.size());
 		if (zoomBackground != null) {
 			zoomBackground.recycle();
 			zoomBackground = null;
@@ -249,7 +248,7 @@ public class Map extends View implements TileListener, MapView {
 		tileWidth = tmsLayer.getTileWidth() * getResolution();
 		tileHeight = tmsLayer.getTileHeight() * getResolution();
 		tilesManager.cancelAll();
-		tilesCache.clearCache();
+		tilesManager.clearCache();
 		
 		//double factor = 39.3701; // meters
 		//double scale = getResolution()* 72.0 * factor;
@@ -495,15 +494,13 @@ public class Map extends View implements TileListener, MapView {
 		int notAvailableTiles = 0;
 		for (int x = firstTileX; x <= lastTileX; x++) {
 			for (int y = firstTileY; y <= lastTileY; y++) {
-				Tile tile = tilesCache.getTile(x, y);
-				if (tile == null) {
-					tile = new Tile(x, y, zoom, null);
-					tilesCache.putTile(tile);
-					if (zoomPinch == 1f) {
-						neededTiles.add(tile);
-					}
+				Tile tile = null;
+				if (zoomPinch == 1f) {
+					tile = tilesManager.getTile(x, y);
+				} else if (tilesManager.hasInCache(x, y)) {
+					tile = tilesManager.getTile(x, y);
 				}
-				if (tile.getImage() != null) {
+				if (tile != null && tile.getImage() != null) {
 					float left = fixedPointOnScreen.x+(256*(x-firstTileX));
 					float bottom = fixedPointOnScreen.y+(y-firstTileY)*256;
 					if (showZoomBackground) {
@@ -513,20 +510,16 @@ public class Map extends View implements TileListener, MapView {
 					canvas.drawBitmap(tile.getImage(), left, bottom, imagesStyle);
 					//visualDebugger.drawTile(canvas, x, y);
 					canvas.scale(1, -1, left, bottom+128);
-				} else {
+				} else if (zoomPinch == 1f) {
+					//neededTiles.add(tile);
 					notAvailableTiles++;
 				}
 			}
 		}
 		if (notAvailableTiles == 0) {
+			Log.i(TAG, "Hide background");
 			showZoomBackground = false;
 		}
-		//System.out.println("rendering time: "+(System.currentTimeMillis()-t1));
-		//t1 = System.currentTimeMillis();
-		if (neededTiles.size() > 0) {
-			tilesManager.requestTiles(neededTiles);
-		}
-		//System.out.println("requesting time: "+(System.currentTimeMillis()-t1));
 		
 		//Log.i("DEBUG", "zoom: "+zoom+ " resolution: "+getResolution()+" start.x "+startP.x+" end.x "+endP.x);
 		if (drawOverlays) {
@@ -638,12 +631,7 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void onTileLoad(Tile tile) {
 		// throw away tiles with not actual zoom level (delayed)
-		Log.i(TAG, "onTileLoad: "+tile);
-		if (tile.getZoomLevel() != zoom) {
-			tile.recycle();
-			return;
-		}
-		tilesCache.putTile(tile);
+		//Log.i(TAG, "onTileLoad: "+tile);
 		if (! isMooving) {
 			post(new Runnable() {
 				
@@ -658,7 +646,6 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void onTileLoadingFailed(Tile tile) {
 		Log.w(TAG, "onTileLoadingFailed: "+tile);
-		tilesCache.remove(tile);
 	}
 	
 	private int getClosestZoomLevel(double newZoom) {

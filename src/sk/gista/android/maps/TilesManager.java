@@ -28,10 +28,15 @@ public class TilesManager {
 
 	private static final String TAG = TilesManager.class.getName();
 	private List<TileListener> tileListeners = new ArrayList<TileListener>();
+	private MemoryCache tilesCache;
+	private MapView map;
 	private TmsLayer layer;
 	
-	public TilesManager(TmsLayer layer) {
-		this.layer = layer;
+	public TilesManager(MapView map) {
+		this.map = map;
+		this.layer = map.getLayer();
+		tilesCache = new MemoryCache(map, 10);
+		
 		NetworkDebugger.server = "192.168.1.110";
 		NetworkDebugger.debuggingEnabled = true;
 	}
@@ -41,12 +46,18 @@ public class TilesManager {
 	}
 	
 	protected void fireTileLoad(Tile tile) {
+		if (tile.getZoomLevel() != map.getZoom()) {
+			tile.recycle();
+			return;
+		}
+		tilesCache.putTile(tile);
 		for (TileListener listener : tileListeners) {
 			listener.onTileLoad(tile);
 		}
 	}
 	
 	protected void fireTileLoadingFailed(Tile tile) {
+		tilesCache.remove(tile);
 		for (TileListener listener : tileListeners) {
 			listener.onTileLoadingFailed(tile);
 		}
@@ -61,6 +72,25 @@ public class TilesManager {
 				d.cancel(true);
 			}
 		}
+	}
+	
+	public void clearCache() {
+		tilesCache.clearCache();
+	}
+	
+	public boolean hasInCache(int x, int y) {
+		return tilesCache.getTile(x, y) != null;
+	}
+	
+	public Tile getTile(int x, int y) {
+		Tile tile = tilesCache.getTile(x, y);
+		if (tile == null) {
+			tile = new Tile(x, y, map.getZoom(), null);
+			requestTile(tile);
+			tilesCache.putTile(tile);
+			return null;
+		}
+		return tile;
 	}
 	
 	public void requestTiles(List<Tile> tiles) {
