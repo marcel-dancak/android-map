@@ -66,6 +66,7 @@ public class Map extends View implements TileListener, MapView {
 	private boolean isMooving;
 	
 	private MapListener mapListener;
+	private MapEventsGenerator mapEventsGenerator;
 	
 	public Map(Context context) {
 		super(context);
@@ -103,6 +104,7 @@ public class Map extends View implements TileListener, MapView {
 		scaleStyle.setAntiAlias(true);
 		
 		overlays = new ArrayList<Overlay>(1);
+		mapEventsGenerator = new MapEventsGenerator(this);
 	}
 	
 	public void setLayer(TmsLayer layer) {
@@ -241,6 +243,9 @@ public class Map extends View implements TileListener, MapView {
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		if (true)
+			return mapEventsGenerator.onTouchEvent(event);
+		
 		if (tmsLayer == null) {
 			return false;
 		}

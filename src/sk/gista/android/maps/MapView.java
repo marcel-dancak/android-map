@@ -30,6 +30,11 @@ public interface MapView extends AndroidComponent {
 	
 	void recycle();
 	
+	PointF mapToScreen(float x, float y);
+	PointF screenToMap(float x, float y);
+	float getResolution();
+	
+	
 	public interface MapListener {
 		void onLayerChanged(TmsLayer layer);
 		void onZoomChanged(int zoom);
