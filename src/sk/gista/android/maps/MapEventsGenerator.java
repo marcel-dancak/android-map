@@ -1,10 +1,6 @@
 package sk.gista.android.maps;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import sk.gista.android.utils.Utils;
-import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -49,80 +45,61 @@ public class MapEventsGenerator {
 			switch (action) {
 			case MotionEvent.ACTION_POINTER_DOWN:
 				wasZoom = true;
-				//startPoint1 = new PointF(x, y);
-				//startPoint2 = new PointF(event.getX(1), height-event.getY(1));
-				//startPoint1.length(event.getX(1), height-event.getY(1));
-				float x1 = event.getX(0);
-				float y1 = event.getY(0);
-				float x2 = event.getX(1);
-				float y2 = event.getY(1);
-				//startDistance = Utils.distance(x, y, event.getX(1), height-event.getY(1));
-				startDistance = Utils.distance(x1, y1, x2, y2);
+				startDistance = Utils.distance(x, y, event.getX(1), height-event.getY(1));
 				//Log.i(TAG, "2 Fingers, start distance: "+startDistance);
 				break;
 			case MotionEvent.ACTION_POINTER_UP:
 				//Log.i(TAG, "1 Finger");
 				listener.onZoomEnd();
-				
-				//wasZoom = false;
 				break;
 			case MotionEvent.ACTION_DOWN:
 				//Log.i(TAG, "delta: "+(curTime - lastTouchTime));
 				if (curTime - lastTouchTime > 40 && curTime - lastTouchTime < 150) {
 					Log.i(TAG, "Double click!");
-					
+					listener.onDoubleTap(x, y);
 				} else {
 					//wasZoom = false;
-					dragStartCenter = map.getCenter();
+					dragStartCenter = new PointF(map.getCenter().x, map.getCenter().y);
 					dragStartPx = new PointF(x, y);
+					
+					listener.onTapStart();
 				}
+				
 				break;
 			case MotionEvent.ACTION_UP:
-				// for the case when event with ACTION_POINTER_UP action didn't occurred
-				if (wasZoom) {
-					// TODO: check that tmsLayer is not null
-					//onZoomPinchEnd();
-				}
 				wasZoom = false;
 				lastTouchTime = curTime;
+				listener.onTapEnd();
 				break;
 			case MotionEvent.ACTION_MOVE:
 				//Log.i(TAG, "ACTION_MOVE "+event.getPointerCount());
 				if (!wasZoom && event.getPointerCount() == 1) {
-					float newPosX = dragStartCenter.x+(x-dragStartPx.x)*map.getResolution();
-					float newPosY = dragStartCenter.y+(y-dragStartPx.y)*map.getResolution();
-					
+					float newPosX = dragStartCenter.x+(dragStartPx.x-x)*map.getResolution();
+					float newPosY = dragStartCenter.y+(dragStartPx.y-y)*map.getResolution();
 					listener.onMove(newPosX, newPosY);
-					//map.setCenter(newPosX, newPosY);
-					//center.offset(dragStart.x - dragPos.x, dragStart.y - dragPos.y);
-					//invalidate();
 				} else {
-					x1 = event.getX(0);
-					y1 = event.getY(0);
-					x2 = event.getX(1);
-					y2 = event.getY(1);
-					//Log.i(TAG, "p1="+x1+","+y1+" p2="+x2+","+y2);
-					float distance = Utils.distance(x1, y1, x2, y2);
-					float possibleZoomPinch = distance/startDistance;
-					if (possibleZoomPinch > 1 && zoom < layer.getResolutions().length -1) {
-						//zoomPinch = possibleZoomPinch;
-					}
-					if (possibleZoomPinch < 1 && zoom > 0) {
-						//zoomPinch = possibleZoomPinch;
+					float distance = Utils.distance(x, y, event.getX(1), height-event.getY(1));
+					float zoomPinch = distance/startDistance;
+					
+					if ((zoomPinch > 1 && zoom < layer.getResolutions().length -1)
+							|| (zoomPinch < 1 && zoom > 0)) {
+						listener.onZoom(zoomPinch);
 					}
 					//Log.i(TAG, "2 Fingers, distance: "+distance + " zoom "+zoomPinch);
 				}
 				break;
 			}
 		}
-		
 		return true;
 	}
 	
 	
 	public interface MapControlListener {
-		void onMoveStart();
+		void onTapStart();
+		void onTapEnd();
+		void onDoubleTap(float x, float y);
 		void onMove(float x, float y);
+		void onZoom(float zoom);
 		void onZoomEnd();
 	}
 }

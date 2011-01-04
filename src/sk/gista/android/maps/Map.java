@@ -21,12 +21,13 @@ import android.view.View;
 
 import sk.gista.android.maps.Layer.Tile;
 import sk.gista.android.maps.Layer.TileListener;
+import sk.gista.android.maps.MapEventsGenerator.MapControlListener;
 import sk.gista.android.utils.CustomAnimation;
 import sk.gista.android.utils.TmsVisualDebugger;
 import sk.gista.android.utils.Utils;
 import sk.gista.android.utils.CustomAnimation.CompositeAnimation;
 
-public class Map extends View implements TileListener, MapView {
+public class Map extends View implements TileListener, MapView, MapControlListener {
 
 	private static String TAG = Map.class.getSimpleName();
 
@@ -63,7 +64,7 @@ public class Map extends View implements TileListener, MapView {
 	
 	private Timer animTimer = new Timer();
 	private TmsVisualDebugger visualDebugger;
-	private boolean isMooving;
+	private boolean isPeriodicallyRedrawing;
 	
 	private MapListener mapListener;
 	private MapEventsGenerator mapEventsGenerator;
@@ -105,6 +106,7 @@ public class Map extends View implements TileListener, MapView {
 		
 		overlays = new ArrayList<Overlay>(1);
 		mapEventsGenerator = new MapEventsGenerator(this);
+		mapEventsGenerator.setMapControlListener(this);
 	}
 	
 	public void setLayer(TmsLayer layer) {
@@ -219,179 +221,28 @@ public class Map extends View implements TileListener, MapView {
 		return tmsLayer;
 	}
 	
-	private PointF centerAtDragStart;
-	private PointF dragStart;
-
-	private PointF lastPos;
-	private PointF dragStartPx;
-
 	// coordinates on map and screen to compute aligned positions from map to the screen
 	private PointF fixedPointOnMap = new PointF();
 	private Point fixedPointOnScreen = new Point();
 	
 	// zoom
-	private boolean wasZoom;
-	private float startDistance;
 	private float zoomPinch = 1f;
 	private Bitmap zoomBackground;
 	private boolean showZoomBackground;
 	
 	private PointF zoomBgStart = new PointF();
-	
-	private long lastTouchTime;
 	//private Matrix overlayMatrix;
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (true)
-			return mapEventsGenerator.onTouchEvent(event);
-		
-		if (tmsLayer == null) {
-			return false;
-		}
-		float x = event.getX(0);
-		float y = height-event.getY(0);
-		
-		long curTime = System.currentTimeMillis();
-		
-		
-		int action = event.getAction() & MotionEvent.ACTION_MASK;
-		
-		switch (action) {
-		case MotionEvent.ACTION_POINTER_DOWN:
-			wasZoom = true;
-			//startPoint1 = new PointF(x, y);
-			//startPoint2 = new PointF(event.getX(1), height-event.getY(1));
-			//startPoint1.length(event.getX(1), height-event.getY(1));
-			float x1 = event.getX(0);
-			float y1 = event.getY(0);
-			float x2 = event.getX(1);
-			float y2 = event.getY(1);
-			//startDistance = Utils.distance(x, y, event.getX(1), height-event.getY(1));
-			startDistance = Utils.distance(x1, y1, x2, y2);
-			//Log.i(TAG, "2 Fingers, start distance: "+startDistance);
-			break;
-		case MotionEvent.ACTION_POINTER_UP:
-			//Log.i(TAG, "1 Finger");
-			onZoomPinchEnd();
-			
-			//wasZoom = false;
-			break;
-		case MotionEvent.ACTION_DOWN:
-			//Log.i(TAG, "delta: "+(curTime - lastTouchTime));
-			if (curTime - lastTouchTime > 40 && curTime - lastTouchTime < 150) {
-				Log.i(TAG, "Double click!");
-				PointF pos = screenToMap(x, y);
-				int newZoom = zoom + 1 < tmsLayer.getResolutions().length? zoom + 1 : zoom;
-				moveAndZoom(pos.x , pos.y, newZoom);
-			} else {
-				//wasZoom = false;
-				//showZoomBackground = false;
-				/*
-				Log.i(TAG, format("Tiles: %d Memory Free: %d kB Heap size:%d kB Max: %d kB", 
-						tiles.size(),
-						Runtime.getRuntime().freeMemory()/1024,
-						Runtime.getRuntime().totalMemory()/1024,
-						Runtime.getRuntime().maxMemory()/1024));
-				*/
-				isMooving = true;
-				centerAtDragStart = new PointF(center.x, center.y);
-				dragStart = screenToMap(x, y);
-				dragStartPx = new PointF(x, y);
-				lastPos = screenToMap(x, y);
-				animTimer.schedule(new TimerTask() {
-					
-					@Override
-					public void run() {
-						post(new Runnable() {
-							
-							@Override
-							public void run() {
-								invalidate();
-							}
-						});
-					}
-				}, 30, 60);
-			}
-			break;
-		case MotionEvent.ACTION_UP:
-			// for the case when event with ACTION_POINTER_UP action didn't occurred
-			if (wasZoom) {
-				// TODO: check that tmsLayer is not null
-				//onZoomPinchEnd();
-			}
-			animTimer.cancel();
-			animTimer = new Timer();
-			isMooving = false;
-			wasZoom = false;
-			lastTouchTime = curTime;
-			// redraw map at the end, because when using timer, position on the map can be different
-			// (newer) than it is shown. And if rendering of smaller region occur (e.g. when redrawing
-			// control buttons), then this area will draw map on different position.
-			invalidate();
-			break;
-		case MotionEvent.ACTION_MOVE:
-			//Log.i(TAG, "ACTION_MOVE "+event.getPointerCount());
-			if (!wasZoom && event.getPointerCount() == 1) {
-				PointF dragPos2 = screenToMap2(x, y);
-				Matrix m = new Matrix();
-				m.postRotate(heading, lastPos.x, lastPos.y);
-				float[] pos = new float[] {dragPos2.x, dragPos2.y};
-				m.mapPoints(pos);
-				//center.set(pos[0], pos[1]);
-				center.offset(lastPos.x-pos[0], lastPos.y-pos[1]);
-				//center.offset(lastPos.x-dragPos2.x, lastPos.y-dragPos2.y);
-				lastPos = dragPos2;
-				if (true) break;
-				
-				PointF dragPos = screenToMap2(x, y);
-				// Log.i(TAG, format("Start [%f, %f] currnet [%f, %f]",
-				// dragStart.x, dragStart.y, dragPos.x, dragPos.y));
-				// Log.i(TAG,
-				// format("cur(%f, %f) dragStart(%f, %f) Move [%f, %f]",
-				// dragPos.x, dragPos.y, dragStart.x, dragStart.y,
-				// dragStart.x-dragPos.x, dragStart.y-dragPos.y));
-				/*
-				 * Log.i(TAG, format("set center (%f, %f) vs (%f, %f)",
-				 * centerAtDragStart.x+(dragStart.x-dragPos.x),
-				 * centerAtDragStart.y+(dragStart.y-dragPos.y),
-				 * (dragStartPx.x-x)*getResolution(),
-				 * (dragStartPx.y-y)*getResolution()));
-				 */
-				center.set(centerAtDragStart);
-				m.reset();
-				m.postRotate(heading, dragStart.x, dragStart.y);
-				pos = new float[] {dragPos.x, dragPos.y};
-				m.mapPoints(pos);
-				center.offset(dragStart.x - pos[0], dragStart.y - pos[1]);
-				//center.offset(dragStart.x - dragPos.x, dragStart.y - dragPos.y);
-				//invalidate();
-			} else {
-				x1 = event.getX(0);
-				y1 = event.getY(0);
-				x2 = event.getX(1);
-				y2 = event.getY(1);
-				//Log.i(TAG, "p1="+x1+","+y1+" p2="+x2+","+y2);
-				float distance = Utils.distance(x1, y1, x2, y2);
-				float possibleZoomPinch = distance/startDistance;
-				if (possibleZoomPinch > 1 && zoom < tmsLayer.getResolutions().length -1) {
-					zoomPinch = possibleZoomPinch;
-				}
-				if (possibleZoomPinch < 1 && zoom > 0) {
-					zoomPinch = possibleZoomPinch;
-				}
-				//Log.i(TAG, "2 Fingers, distance: "+distance + " zoom "+zoomPinch);
-			}
-			break;
-		}
-		//Utils.dumpEvent(event);
-		return true;
+		return mapEventsGenerator.onTouchEvent(event);
 	}
 
 	List<Tile> neededTiles = new ArrayList<Layer.Tile>();
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		Log.i(TAG, "redrawing");
 		//Log.i(TAG, "zoomPinch="+zoomPinch);
 		canvas.drawRGB(255, 255, 255);
 		if (showZoomBackground) {
@@ -471,7 +322,6 @@ public class Map extends View implements TileListener, MapView {
 			}
 		}
 		if (notAvailableTiles == 0) {
-			Log.i(TAG, "Hide background");
 			showZoomBackground = false;
 		}
 		
@@ -536,13 +386,6 @@ public class Map extends View implements TileListener, MapView {
 		return tmsLayer.getTileAt(mapPos, zoom);
 	}
 
-	private PointF screenToMap2(float x, float y) {
-		float offsetX = x - width / 2f;
-		float offsetY = y - height / 2f;
-		return new PointF(centerAtDragStart.x + offsetX * getResolution(), centerAtDragStart.y
-				+ offsetY * getResolution());
-	}
-
 	public final PointF screenToMap(float x, float y) {
 		
 		Matrix m = new Matrix();
@@ -586,7 +429,7 @@ public class Map extends View implements TileListener, MapView {
 	public void onTileLoad(Tile tile) {
 		// throw away tiles with not actual zoom level (delayed)
 		//Log.i(TAG, "onTileLoad: "+tile);
-		if (! isMooving) {
+		if (! isPeriodicallyRedrawing) {
 			post(new Runnable() {
 				
 				@Override
@@ -690,6 +533,65 @@ public class Map extends View implements TileListener, MapView {
 	@Override
 	public void setOnZoomChangeListener(MapListener listener) {
 		this.mapListener = listener;
+	}
+	
+
+	@Override
+	public void onTapStart() {
+		startPeriodicalRedrawing();
+	}
+
+	public void onTapEnd() {
+		stopPeriodicalRedrawing();
+		invalidate();
+	}
+	
+	@Override
+	public void onMove(float x, float y) {
+		setCenter(x, y);
+	}
+
+	@Override
+	public void onZoom(float zoom) {
+		zoomPinch = zoom;
+	}
+	
+	@Override
+	public void onZoomEnd() {
+		onZoomPinchEnd();
+	}
+
+	@Override
+	public void onDoubleTap(float x, float y) {
+		PointF pos = screenToMap(x, y);
+		int newZoom = zoom + 1 < tmsLayer.getResolutions().length? zoom + 1 : zoom;
+		moveAndZoom(pos.x , pos.y, newZoom);
+	}
+	
+	private final void startPeriodicalRedrawing() {
+		if (isPeriodicallyRedrawing) {
+			throw new IllegalStateException();
+		}
+		isPeriodicallyRedrawing = true;
+		animTimer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+				post(new Runnable() {
+					
+					@Override
+					public void run() {
+						invalidate();
+					}
+				});
+			}
+		}, 40, 80);
+	}
+	
+	private final void stopPeriodicalRedrawing() {
+		isPeriodicallyRedrawing = false;
+		animTimer.cancel();
+		animTimer = new Timer();
 	}
 	
 	
