@@ -33,7 +33,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 
 	private PointF center;
 	private BBox bbox;
-	private int zoom = 1;
+	private int zoomLevel = 1;
 	private int heading;
 	
 	private float tileWidth;
@@ -43,8 +43,22 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	private int width;
 	private int height;
 
-	private TmsLayer tmsLayer;
+	// coordinates on map and screen to compute aligned positions from map to the screen
+	private PointF fixedPointOnMap = new PointF();
+	private Point fixedPointOnScreen = new Point();
 	
+	private Point firstVisibleTile = new Point();
+	private Point lastVisibleTile = new Point();
+	
+	// zoom
+	private float zoomPinch = 1f;
+	private Bitmap zoomBackground;
+	private boolean showZoomBackground;
+	
+	private PointF zoomBgStart = new PointF();
+	//private Matrix overlayMatrix;
+	
+	private TmsLayer tmsLayer;
 	private TilesManager tilesManager;
 	private List<Overlay> overlays;
 	
@@ -68,6 +82,9 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	
 	private MapListener mapListener;
 	private MapEventsGenerator mapEventsGenerator;
+	
+	private boolean dirty;
+	private int size;
 	
 	public Map(Context context) {
 		super(context);
@@ -125,18 +142,18 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		
 				visualDebugger = new TmsVisualDebugger(this);
 				//setZoom(1);
-				onZoomChange(zoom, zoom);
+				onZoomChange(zoomLevel, zoomLevel);
 			}
 			mapListener.onLayerChanged(layer);
 		}
 	}
 	
 	public int getZoom() {
-		return zoom;
+		return zoomLevel;
 	}
 	
 	public void zoomTo(final int zoom) {
-		if (this.zoom == zoom) {
+		if (this.zoomLevel == zoom) {
 			return;
 		}
 		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
@@ -149,12 +166,12 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	}
 	
 	public void setZoom(int zoom) {
-		if (this.zoom == zoom) {
+		if (this.zoomLevel == zoom) {
 			return;
 		}
 		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
-			int oldZoom = this.zoom;
-			this.zoom = zoom;
+			int oldZoom = this.zoomLevel;
+			this.zoomLevel = zoom;
 			onZoomChange(oldZoom, zoom);
 			if (mapListener != null) {
 				mapListener.onZoomChanged(zoom);
@@ -182,7 +199,6 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		}
 	}
 	
-	private int size;
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.i(TAG, format("width: %d height: %d", w, h));
@@ -221,36 +237,25 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		return tmsLayer;
 	}
 	
-	// coordinates on map and screen to compute aligned positions from map to the screen
-	private PointF fixedPointOnMap = new PointF();
-	private Point fixedPointOnScreen = new Point();
-	
-	// zoom
-	private float zoomPinch = 1f;
-	private Bitmap zoomBackground;
-	private boolean showZoomBackground;
-	
-	private PointF zoomBgStart = new PointF();
-	//private Matrix overlayMatrix;
-	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		return mapEventsGenerator.onTouchEvent(event);
 	}
 
-	List<Tile> neededTiles = new ArrayList<Layer.Tile>();
-	
 	@Override
 	protected void onDraw(Canvas canvas) {
-		Log.i(TAG, "redrawing");
-		//Log.i(TAG, "zoomPinch="+zoomPinch);
+		//Log.i(TAG, "redrawing");
 		canvas.drawRGB(255, 255, 255);
 		if (showZoomBackground) {
 			//Log.i(TAG, "drawing background");
 			canvas.drawBitmap(zoomBackground, (zoomBgStart.x-center.x)/getResolution(), -(zoomBgStart.y-center.y)/getResolution(), null);
-			//return;
 		}
 		if (tmsLayer == null) {
+			return; // TODO: and what about overlays ?
+		}
+		
+		PointF o = screenToMap(0, 0);
+		if (o.x > bbox.maxX || o.y > bbox.maxY) {
 			return; // TODO: and what about overlays ?
 		}
 		
@@ -263,42 +268,18 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		//canvas.scale(scale, scale, width / 2f, height / 2f);
 		//canvas.rotate(-heading, width/2f, height/2f);
 		
-		PointF startP = mapToScreen(bbox.minX, bbox.minY);
-		PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
-		//canvas.drawArc(new RectF(startP.x-2, startP.y-2, startP.x+2, startP.y+2), 0, 360, true, screenBorderStyle);
+		//if (dirty) {
+			validateMap();
+		//}
 		
-		PointF o = screenToMap(0, 0);
-		if (o.x > bbox.maxX || o.y > bbox.maxY) {
-			return; // TODO: and what about overlays ?
-		}
-		Point s = getTileAtScreen(0, 0);
-		Point e = getTileAtScreen(width, height);
-		
-		//Log.i(TAG, format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x, s.y, e.x, e.y));
-		int lastTileX = (int) ((bbox.maxX - bbox.minX) / tileWidth);
-		int lastTileY = (int) ((bbox.maxY - bbox.minY) / tileHeight);
-
-		lastTileX = e.x < lastTileX ? e.x : lastTileX;
-		lastTileY = e.y < lastTileY ? e.y : lastTileY;
-		int firstTileX = s.x > 0 ? s.x : 0;
-		int firstTileY = s.y > 0 ? s.y : 0;
-		
-		fixedPointOnMap.x = bbox.minX + tileWidth * firstTileX;
-		fixedPointOnMap.y = bbox.minY + tileHeight * firstTileY;
-		PointF p = mapToScreen(fixedPointOnMap.x, fixedPointOnMap.y);
-		fixedPointOnScreen.x = (int) Math.round(p.x);
-		fixedPointOnScreen.y = (int) Math.round(p.y);
-		
-		neededTiles.clear();
 		long t1 = System.currentTimeMillis();
-		
 		//Log.i(TAG, format("bbox=%f, %f, %f, %f center=%f, %f", bbox.minX, bbox.minY, bbox.maxX, bbox.maxY, center.x, center.y));
 		//Log.i(TAG, format("firstTileX=%d firstTileY=%d", firstTileX, firstTileY));
 		// TODO: check that firstTileX/Y and lastTileX/Y aren't too high (when onZoomChange() or something like that
 		// wasn't called)
 		int notAvailableTiles = 0;
-		for (int x = firstTileX; x <= lastTileX; x++) {
-			for (int y = firstTileY; y <= lastTileY; y++) {
+		for (int x = firstVisibleTile.x; x <= lastVisibleTile.x; x++) {
+			for (int y = firstVisibleTile.y; y <= lastVisibleTile.y; y++) {
 				Tile tile = null;
 				if (zoomPinch == 1f) {
 					tile = tilesManager.getTile(x, y);
@@ -306,8 +287,8 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 					tile = tilesManager.getTile(x, y);
 				}
 				if (tile != null && tile.getImage() != null) {
-					float left = fixedPointOnScreen.x+(256*(x-firstTileX));
-					float bottom = fixedPointOnScreen.y+(y-firstTileY)*256;
+					float left = fixedPointOnScreen.x+(256*(x-firstVisibleTile.x));
+					float bottom = fixedPointOnScreen.y+(y-firstVisibleTile.y)*256;
 					if (showZoomBackground) {
 						canvas.drawRect(left, bottom, left+256, bottom+256, whiteStyle);
 					}
@@ -327,6 +308,9 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		
 		//Log.i("DEBUG", "zoom: "+zoom+ " resolution: "+getResolution()+" start.x "+startP.x+" end.x "+endP.x);
 		if (drawOverlays) {
+			PointF startP = mapToScreen(bbox.minX, bbox.minY);
+			PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
+			
 			mapStyle.setStrokeWidth(2f/zoomPinch);
 			canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 		}
@@ -361,7 +345,6 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		}
 	}
 
-	
 	private void drawGraphicalScale(Canvas canvas) {
 		canvas.save();
 		canvas.translate(0, height-24);
@@ -377,13 +360,38 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		canvas.restore();
 	}
 	
+	private void validateMap() {
+		PointF o = screenToMap(0, 0);
+		if (o.x > bbox.maxX || o.y > bbox.maxY) {
+			return; // TODO: and what about overlays ?
+		}
+		Point s = getTileAtScreen(0, 0);
+		Point e = getTileAtScreen(width, height);
+		
+		firstVisibleTile.x = s.x > 0 ? s.x : 0;
+		firstVisibleTile.y = s.y > 0 ? s.y : 0;
+		
+		//Log.i(TAG, format("left-top tile: [%d, %d] right-bottom tile: [%d, %d]", s.x, s.y, e.x, e.y));
+		lastVisibleTile.x = (int) ((bbox.maxX - bbox.minX) / tileWidth);
+		lastVisibleTile.y = (int) ((bbox.maxY - bbox.minY) / tileHeight);
+
+		lastVisibleTile.x = e.x < lastVisibleTile.x ? e.x : lastVisibleTile.x;
+		lastVisibleTile.y = e.y < lastVisibleTile.y ? e.y : lastVisibleTile.y;
+		
+		fixedPointOnMap.x = bbox.minX + tileWidth * firstVisibleTile.x;
+		fixedPointOnMap.y = bbox.minY + tileHeight * firstVisibleTile.y;
+		PointF p = mapToScreen(fixedPointOnMap.x, fixedPointOnMap.y);
+		fixedPointOnScreen.x = (int) Math.round(p.x);
+		fixedPointOnScreen.y = (int) Math.round(p.y);
+	}
+	
 	private Point getTileAtScreen(int x, int y) {
 		assert x <= width && y <= height : "point outside the screen";
 		PointF mapPos = screenToMap(x, y);
 		//float tileX = (mapPos.x - bbox.minX) / tileWidth;
 		//float tileY = (mapPos.y - bbox.minY) / tileHeight;
 		//return new Point((int) Math.floor(tileX), (int) Math.floor(tileY));
-		return tmsLayer.getTileAt(mapPos, zoom);
+		return tmsLayer.getTileAt(mapPos, zoomLevel);
 	}
 
 	public final PointF screenToMap(float x, float y) {
@@ -422,7 +430,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	}
 	
 	public final float getResolution() {
-		return (float) tmsLayer.getResolutions()[zoom];
+		return (float) tmsLayer.getResolutions()[zoomLevel];
 	}
 
 	@Override
@@ -446,7 +454,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	}
 	
 	private int getClosestZoomLevel(double newZoom) {
-		double newResolution = tmsLayer.getResolutions()[zoom]/newZoom;
+		double newResolution = tmsLayer.getResolutions()[zoomLevel]/newZoom;
 		double closestResolutionDistance = tmsLayer.getResolutions()[0];
 		int indexOfClosestResolution = 0;
 		
@@ -564,7 +572,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	@Override
 	public void onDoubleTap(float x, float y) {
 		PointF pos = screenToMap(x, y);
-		int newZoom = zoom + 1 < tmsLayer.getResolutions().length? zoom + 1 : zoom;
+		int newZoom = zoomLevel + 1 < tmsLayer.getResolutions().length? zoomLevel + 1 : zoomLevel;
 		moveAndZoom(pos.x , pos.y, newZoom);
 	}
 	
@@ -649,13 +657,12 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			showZoomBackground = false;
 			drawOverlays = false;
 			drawGraphicalScale = false;
-			//Log.i(TAG, "**** Drawing ZOOM BACKGROUND ****");
 			onDraw(canvas);
 			drawOverlays = true;
 			drawGraphicalScale = true;
 			
 			zoomPinch = 1f;
-			if (Map.this.zoom != zoom) {
+			if (Map.this.zoomLevel != zoom) {
 				showZoomBackground = true;
 			}
 			setZoom(zoom);
