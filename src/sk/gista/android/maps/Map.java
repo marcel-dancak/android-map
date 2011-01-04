@@ -45,7 +45,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 
 	// coordinates on map and screen to compute aligned positions from map to the screen
 	private PointF fixedPointOnMap = new PointF();
-	private Point fixedPointOnScreen = new Point();
+	private PointF fixedPointOnScreen = new PointF();
 	
 	private Point firstVisibleTile = new Point();
 	private Point lastVisibleTile = new Point();
@@ -158,8 +158,8 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		}
 		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
 			ZoomAnimation animation = new ZoomAnimation(zoom);
-			animation.setDuration(350);
-			animation.setFramesCount(6);
+			animation.setDuration(500);
+			animation.setFramesCount(8);
 			animation.setView(this);
 			animation.start();
 		}
@@ -242,6 +242,11 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		return mapEventsGenerator.onTouchEvent(event);
 	}
 
+	PointF curAlign = new PointF();
+	PointF nextAlign = new PointF();
+	float compX;
+	float compY;
+	int count;
 	@Override
 	protected void onDraw(Canvas canvas) {
 		//Log.i(TAG, "redrawing");
@@ -264,13 +269,33 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		canvas.translate(0, -height);
 		float scale = 0.5f;
 		canvas.save();
-		canvas.scale(zoomPinch, zoomPinch, width / 2f, height / 2f);
-		//canvas.scale(scale, scale, width / 2f, height / 2f);
-		//canvas.rotate(-heading, width/2f, height/2f);
 		
 		//if (dirty) {
 			validateMap();
 		//}
+		count++;
+		//xCompensation = 0.49f*(float) Math.sin(count);
+		//Log.i(TAG, "x compensation = "+xCompensation);
+		//canvas.scale(zoomPinch, zoomPinch, (width+xCompensation)/2f, height/2f);
+		canvas.scale(zoomPinch, zoomPinch, width/2f, height/2f);
+		PointF ca = mapToScreenAligned(center.x, center.y);
+		//Log.i(TAG, "aligned center: "+ca.x+", "+ca.y +" compensation x="+xCompensation);
+		
+		
+		//compX *= zoomPinch;
+		if (zoomPinch == 1f) {
+			compX=0;
+			compY=0;
+		} else {
+			compX = curAlign.x+(nextAlign.x-curAlign.x)*((zoomPinch-1)/2f);
+			compY = curAlign.y+(nextAlign.y-curAlign.y)*((zoomPinch-1)/2f);
+			Log.i(TAG, "compX="+compX + " compY="+compY);
+		}
+		//canvas.scale(zoomPinch, zoomPinch, (width+compX)/2f, height/2f);
+		//canvas.scale(scale, scale, width / 2f, height / 2f);
+		//canvas.rotate(-heading, width/2f, height/2f);
+		
+		
 		
 		long t1 = System.currentTimeMillis();
 		//Log.i(TAG, format("bbox=%f, %f, %f, %f center=%f, %f", bbox.minX, bbox.minY, bbox.maxX, bbox.maxY, center.x, center.y));
@@ -360,7 +385,28 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		canvas.restore();
 	}
 	
+	private float xCompensation;
+	private float yCompensation;
+	
 	private void validateMap() {
+		zoomLevel +=1;
+		tileWidth = tmsLayer.getTileWidth() * getResolution();
+		tileHeight = tmsLayer.getTileHeight() * getResolution();
+		validateMap2();
+		nextAlign.x = xCompensation;
+		nextAlign.y = yCompensation;
+		zoomLevel -=1;
+		tileWidth = tmsLayer.getTileWidth() * getResolution();
+		tileHeight = tmsLayer.getTileHeight() * getResolution();
+		validateMap2();
+		curAlign.x = xCompensation;
+		curAlign.y = yCompensation;
+		if (zoomPinch != 1f) {
+			Log.i(TAG, "Current Alignment x="+curAlign.x+" y="+curAlign.y+" Next Alignment x="+nextAlign.x+" y="+nextAlign.y);
+		}
+	}
+	
+	private void validateMap2() {
 		PointF o = screenToMap(0, 0);
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
 			return; // TODO: and what about overlays ?
@@ -381,8 +427,15 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		fixedPointOnMap.x = bbox.minX + tileWidth * firstVisibleTile.x;
 		fixedPointOnMap.y = bbox.minY + tileHeight * firstVisibleTile.y;
 		PointF p = mapToScreen(fixedPointOnMap.x, fixedPointOnMap.y);
-		fixedPointOnScreen.x = (int) Math.round(p.x);
-		fixedPointOnScreen.y = (int) Math.round(p.y);
+		//fixedPointOnScreen.x = Math.round(p.x);
+		//fixedPointOnScreen.y = Math.round(p.y);
+		fixedPointOnScreen.x = p.x;
+		fixedPointOnScreen.y = p.y;
+		//xCompensation = Math.round(p.x)-p.x;
+		//yCompensation = Math.round(p.y)-p.y;
+		xCompensation = ((int)p.x)-p.x;
+		yCompensation = ((int)p.y)-p.y;
+		//Log.i(TAG, "Center: "+center.x+", "+center.y);
 	}
 	
 	private Point getTileAtScreen(int x, int y) {
@@ -418,6 +471,13 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	}
 
 	public final PointF mapToScreenAligned(float x, float y) {
+		float offsetX = x - center.x;
+		float offsetY = y - center.y;
+		return new PointF( (width / 2f) + (offsetX*zoomPinch / getResolution()), height / 2f + offsetY*zoomPinch
+				/ getResolution());
+	}
+	
+	public final PointF mapToScreenAligned2(float x, float y) {
 		float positionOffsetX = x - fixedPointOnMap.x;
 		float positionOffsetY = y - fixedPointOnMap.y;
 		float tx = fixedPointOnScreen.x+positionOffsetX/getResolution();
@@ -426,7 +486,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		m.postScale(zoomPinch, zoomPinch, width/2f, height/2f);
 		float[] pos = new float[] {tx, ty};
 		m.mapPoints(pos);
-		return new PointF(pos[0], pos[1]);
+		return new PointF(pos[0]-compX, pos[1]);
 	}
 	
 	public final float getResolution() {
@@ -472,8 +532,8 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	private void onZoomPinchEnd() {
 		int closestZoomLevel = getClosestZoomLevel(zoomPinch);
 		ZoomAnimation animation = new ZoomAnimation(closestZoomLevel);
-		animation.setDuration(350);
-		animation.setFramesCount(5);
+		animation.setDuration(500);
+		animation.setFramesCount(8);
 		animation.setView(this);
 		animation.start();
 	}
