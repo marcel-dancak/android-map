@@ -61,8 +61,8 @@ public class MapEventsGenerator {
 					//wasZoom = false;
 					dragStartCenter = new PointF(map.getCenter().x, map.getCenter().y);
 					dragStartPx = new PointF(x, y);
-					
-					listener.onTapStart();
+					PointF pos = map.screenToMap(x, y);
+					listener.onTapStart(pos.x, pos.y);
 				}
 				
 				break;
@@ -95,9 +95,14 @@ public class MapEventsGenerator {
 	
 	
 	public interface MapControlListener {
-		void onTapStart();
+		void onTapStart(float x, float y);
 		void onTapEnd();
 		void onDoubleTap(float x, float y);
+		/**
+		 * 
+		 * @param x map coordinate
+		 * @param y map coordinate
+		 */
 		void onMove(float x, float y);
 		void onZoom(float zoom);
 		void onZoomEnd();

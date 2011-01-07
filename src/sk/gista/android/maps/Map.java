@@ -84,6 +84,9 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	private MapListener mapListener;
 	private MapEventsGenerator mapEventsGenerator;
 	
+	private PointF alignedCenter;
+	private PointF bgPos = new PointF();
+	private PointF zoomAlignOffset;
 	private boolean dirty;
 	private int size;
 	
@@ -191,6 +194,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		} else {
 			center = new PointF(x, y);
 		}
+		alignedCenter = null;
 	}
 	
 	public void recycle() {
@@ -248,12 +252,25 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	protected void onDraw(Canvas canvas) {
 		//Log.i(TAG, "redrawing");
 		canvas.drawRGB(255, 255, 255);
-		if (showZoomBackground) {
-			//Log.i(TAG, "drawing background");
-			canvas.drawBitmap(zoomBackground, (zoomBgStart.x-center.x)/getResolution(), -(zoomBgStart.y-center.y)/getResolution(), null);
-		}
 		if (tmsLayer == null) {
 			return; // TODO: and what about overlays ?
+		}
+		
+		//if (dirty) {
+		validateMap();
+		//}
+		
+		PointF ca = mapToScreenAligned(center.x, center.y);
+		
+		if (showZoomBackground) {
+			Log.i(TAG, "drawing background   zoomPinch: "+zoomPinch);
+			PointF bgAlignedPos = mapToScreenAligned(bgPos.x, bgPos.y);
+			bgAlignedPos.x -= zoomAlignOffset.x;
+			bgAlignedPos.y -= zoomAlignOffset.y;
+			Log.i(TAG, "BG img pos: "+bgAlignedPos.x+", "+bgAlignedPos.y);
+			
+			canvas.drawBitmap(zoomBackground, bgAlignedPos.x, -bgAlignedPos.y, null);
+			//canvas.drawBitmap(zoomBackground, (zoomBgStart.x-center.x)/getResolution(), -(zoomBgStart.y-center.y)/getResolution(), null);
 		}
 		
 		PointF o = screenToMap(0, 0);
@@ -266,42 +283,13 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		canvas.translate(0, -height);// or -(height-1) ?
 		float scale = 0.5f;
 		
-		//if (dirty) {
-			validateMap();
-		//}
-		PointF ca = mapToScreenAligned(center.x, center.y);
 		
-		//compX *= zoomPinch;
+		float compX = alignedCenter.x-ca.x;
+		float compY = alignedCenter.y-ca.y;
 		
-		float compX = 0;
-		float compY = 0;
-		float alignCompX = 0;
-		float alignCompY = 0;
-		float xx = ca.x;
-		float yy = ca.y;
+		//Log.i(TAG, compX+", "+compY);
+		canvas.translate(compX, compY);
 		
-		if (zoomPinch == 1f) {
-			centerAtZoomStart.x = ca.x;
-			centerAtZoomStart.y = ca.y;
-		} else {
-			compX = centerAtZoomStart.x-ca.x;
-			compY = centerAtZoomStart.y-ca.y;
-			
-			alignCompX = (nextCa.x-centerAtZoomStart.x)*((zoomPinch-1f)/(nextScale-1f));
-			alignCompY = (nextCa.y-centerAtZoomStart.y)*((zoomPinch-1f)/(nextScale-1f));
-			 
-			xx = ca.x+compX+alignCompX;
-			yy = ca.y+compY+alignCompY;
-			
-			canvas.translate(compX+alignCompX, compY+alignCompY);
-			//canvas.translate(compX, compY);
-			//Log.i(TAG, "compX="+compX + " compY="+compY);
-		}
-		/*
-		Log.i(TAG, "nextScale: "+nextScale);
-		Log.i(TAG, "centerAtZoomStart: "+centerAtZoomStart.x+" nextCa:"+nextCa.x+"  fraction: "+((zoomPinch-1f)/(nextScale-1f))+" zoomPinch: "+zoomPinch);
-		Log.i(TAG, "X="+xx+" Y="+yy+" Align compensation: "+alignCompX+", "+alignCompY);
-		*/
 		canvas.save();
 		canvas.scale(zoomPinch, zoomPinch, width/2f, height/2f);
 		//screenToMap(width/2f, height/2f);
@@ -345,7 +333,6 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			showZoomBackground = false;
 		}
 		
-		//Log.i("DEBUG", "zoom: "+zoom+ " resolution: "+getResolution()+" start.x "+startP.x+" end.x "+endP.x);
 		if (drawOverlays) {
 			PointF startP = mapToScreen(bbox.minX, bbox.minY);
 			PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
@@ -354,11 +341,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
 		}
 		canvas.restore();
-		/*
-		canvas.translate(compX, compY);
 		
-		canvas.translate(-compX, -compY);
-		*/
 		float fadeStrength = zoomPinch;
 		if (zoomPinch > 1f) {
 			if (zoomPinch > 2f) {
@@ -371,18 +354,11 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			}
 			canvas.drawARGB((int) (100*((1f/fadeStrength) -1f)), 255, 255, 255);
 		}
-		
 		if (drawOverlays) {
 			for (Overlay overlay : overlays) {
 				overlay.onDraw(this, canvas, zoomPinch);
 			}
-			//canvas.drawArc(new RectF(ca.x-1, ca.y-1, ca.x+1, ca.y+1), 0, 360, true, screenBorderStyle);
-			//canvas.drawArc(new RectF(xx-1, yy-1, xx+1, yy+1), 0, 360, true, screenBorderStyle);
 		}
-		//Log.i(TAG, "aligned center: "+ca.x+", "+ca.y+"  Next CA: "+nextCa.x+", "+nextCa.y);
-		//Log.i(TAG, "aligned center: "+xx+", "+yy);
-		
-		
 		/*
 		canvas.drawRect(0, 0, width, height, screenBorderStyle2);
 		canvas.drawArc(new RectF(-3, -3, 3, 3), 0, 360, true, screenBorderStyle2);
@@ -410,85 +386,13 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		canvas.restore();
 	}
 	
-	PointF nextCa;
-	float nextScale = 1f;
-	
-	int nextZoom;
-	int prevZoom;
-	float scaleFraction;
-	PointF prevZAC;
-	PointF nextZAC;
 	private void validateMap() {
-		int maxZoomLevel = tmsLayer.getResolutions().length-1;
-		/*
-		float closesUpperScale = 1f;
-		nextZoom = zoomLevel;
-		float closesBottomScale = 1f;
-		prevZoom = zoomLevel;
-		
-		if (zoomPinch > 1f) {
-			// find first scale that is greater than zoomPinch
-			for (int zoom = zoomLevel+1; zoom <= maxZoomLevel; zoom++) {
-				float scale = (float) (tmsLayer.getResolutions()[zoomLevel]/tmsLayer.getResolutions()[zoom]);
-				closesUpperScale = scale;
-				nextZoom = zoom;
-				if (zoomPinch < scale) {
-					break;
-				}
-				closesBottomScale = closesUpperScale;
-				prevZoom = zoom;
-			}
-		} else {
-			// find first scale that is less than zoomPinch
-			for (int zoom = zoomLevel-1; zoom > 0; zoom--) {
-				float scale = (float) (tmsLayer.getResolutions()[zoomLevel]/tmsLayer.getResolutions()[zoom]);
-				closesBottomScale = scale;
-				prevZoom = zoom;
-				if (zoomPinch > scale) {
-					break;
-				}
-				closesUpperScale = closesBottomScale;
-				nextZoom = zoom;
-			}
+		validateMap2();
+		if (alignedCenter == null) {
+			alignedCenter = mapToScreenAligned(center.x, center.y);
+			//Log.i(TAG, "Center= "+center.x+", "+center.y);
+			//Log.i(TAG, "alignedCenter= "+alignedCenter.x+", "+alignedCenter.y);
 		}
-		scaleFraction = (zoomPinch-closesBottomScale)/(closesUpperScale-closesBottomScale);
-		
-		int currentZoom = zoomLevel;
-		zoomLevel = prevZoom;
-		tileWidth = tmsLayer.getTileWidth() * getResolution();
-		tileHeight = tmsLayer.getTileHeight() * getResolution();
-		validateMap2();
-		prevZAC = mapToScreenAligned(center.x, center.y);
-		nextScale = (float) (tmsLayer.getResolutions()[zoomLevel-1]/tmsLayer.getResolutions()[zoomLevel]);
-		zoomLevel = nextZoom;
-		tileWidth = tmsLayer.getTileWidth() * getResolution();
-		tileHeight = tmsLayer.getTileHeight() * getResolution();
-		validateMap2();
-		nextZAC = mapToScreenAligned(center.x, center.y);
-		
-		zoomLevel = currentZoom;
-		
-		Log.i(TAG, "Current Zoom: "+zoomLevel+ " Scale:" + zoomPinch +
-				" Next Zoom: " + nextZoom + " closesUpperScale: " + closesUpperScale +
-				" Prev Zoom: "+ prevZoom + " closesBottomScale: "+ closesBottomScale + " fraction: "+scaleFraction);
-		*/
-		if (zoomPinch == 1f) {
-			if (zoomLevel+1 < maxZoomLevel) {
-				zoomLevel++;
-				tileWidth = tmsLayer.getTileWidth() * getResolution();
-				tileHeight = tmsLayer.getTileHeight() * getResolution();
-				validateMap2();
-				nextCa = mapToScreenAligned(center.x, center.y);
-				nextScale = (float) (tmsLayer.getResolutions()[zoomLevel-1]/tmsLayer.getResolutions()[zoomLevel]);
-				zoomLevel--;
-				tileWidth = tmsLayer.getTileWidth() * getResolution();
-				tileHeight = tmsLayer.getTileHeight() * getResolution();
-			} else {
-				nextCa = mapToScreenAligned(center.x, center.y);
-				nextScale = 1f;
-			}
-		}
-		validateMap2();
 	}
 	
 	private void validateMap2() {
@@ -514,8 +418,11 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		PointF p = mapToScreen(firstTilePosition.x, firstTilePosition.y);
 		firstTilePositionPx.x = Math.round(p.x);
 		firstTilePositionPx.y = Math.round(p.y);
+		alignOffset.x = Math.round(p.x)-p.x;
 		//Log.i(TAG, "Center: "+center.x+", "+center.y);
 	}
+	
+	private PointF alignOffset = new PointF();
 	
 	private Point getTileAtScreen(int x, int y) {
 		assert x <= width && y <= height : "point outside the screen";
@@ -655,8 +562,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			animation.setView(this);
 			animation.start();
 		} else {
-			center.x = x;
-			center.y = y;
+			setCenter(x, y);
 			invalidate();
 		}
 	}
@@ -684,7 +590,8 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	
 
 	@Override
-	public void onTapStart() {
+	public void onTapStart(float x, float y) {
+		Log.i(TAG, "Clicked at: "+x+", "+y);
 		startPeriodicalRedrawing();
 	}
 
@@ -793,8 +700,11 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			}
 			
 			Canvas canvas = new Canvas(zoomBackground);
+			//Log.i(TAG, "Zoom End AC: "+alignedCenter.x+", "+alignedCenter.y);
+			
 			zoomBgStart.x = center.x;
 			zoomBgStart.y = center.y;
+			
 			showZoomBackground = false;
 			drawOverlays = false;
 			drawGraphicalScale = false;
@@ -807,6 +717,11 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 				showZoomBackground = true;
 			}
 			setZoom(zoom);
+			validateMap();
+			bgPos = screenToMap(0, 0);
+			zoomAlignOffset = mapToScreenAligned(bgPos.x, bgPos.y);
+			//Log.i(TAG, "Zoom Align offset: "+zoomAlignOffset.x+", "+zoomAlignOffset.y);
+			//Log.i(TAG, "BG POS: "+bgPos.x +" ftppx: "+firstTilePositionPx.x +" resolution: "+getResolution());
 		}
 	}
 }
