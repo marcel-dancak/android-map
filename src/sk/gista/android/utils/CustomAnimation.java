@@ -15,6 +15,8 @@ public abstract class CustomAnimation extends TimerTask {
 	private Timer timer;
 	private View view;
 	
+	private boolean stooped;
+	
 	public CustomAnimation() {
 	}
 	
@@ -31,6 +33,14 @@ public abstract class CustomAnimation extends TimerTask {
 		this.count = count;
 	}
 	
+	public synchronized void stop() {
+		cancel();
+		stooped = true;
+	}
+	
+	private synchronized boolean isStopped() {
+		return stooped;
+	}
 	/**
 	 * Sets view that will be invalidated on every animation step
 	 * 
@@ -51,6 +61,9 @@ public abstract class CustomAnimation extends TimerTask {
 	
 	@Override
 	public void run() {
+		if (isStopped()) {
+			return;
+		}
 		frame++;
 		if (frame > count) {
 			timer.cancel();
