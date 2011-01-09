@@ -3,7 +3,8 @@
   xmlns:android="http://schemas.android.com/apk/res/android">
 	<item android:id="@+id/layers"
 	   android:title="@string/layers_label"
-	   android:alphabeticShortcut="@string/layers_shortcut" />
+	   android:alphabeticShortcut="@string/layers_shortcut"
+	   android:icon="@drawable/ic_menu_layers"/>
    <item android:id="@+id/settings"
 	   android:title="@string/settings_label"
 	   android:alphabeticShortcut="@string/settings_shortcut"
