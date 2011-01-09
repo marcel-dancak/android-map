@@ -306,6 +306,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		
 		Log.i(TAG, "Compensation: "+compX+", "+compY);
 		
+		canvas.save();
 		canvas.translate(compX, compY);
 		if (showZoomBackground && zoomBackground != null) {
 			//Log.i(TAG, "drawing background   zoomPinch: "+zoomPinch);
@@ -412,6 +413,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		canvas.rotate(heading, width/2f, height/2f);
 		canvas.drawRect(0, 0, width, height, screenBorderStyle);
 		*/
+		canvas.restore();
 		if (drawGraphicalScale) {
 			drawGraphicalScale(canvas);
 		}
