@@ -158,6 +158,9 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 	}
 	
 	public int getZoom() {
+		if (zoomAnimation != null) {
+			return zoomAnimation.zoom;
+		}
 		return zoomLevel;
 	}
 	
@@ -168,15 +171,8 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		if (zoom >= 0 && zoom < tmsLayer.getResolutions().length) {
 			if (zoomAnimation != null) {
 				zoomAnimation.stop();
-				//Log.i(TAG, "Stop Zooming Animation! At "+zoomPinch);
-				int z = zoom+zoomAnimation.zoom-zoomLevel;
-				if (z < 0 || z >= tmsLayer.getResolutions().length) {
-					return;
-				}
-				zoomAnimation = new ZoomAnimation(z);
-			} else {
-				zoomAnimation = new ZoomAnimation(zoom);
 			}
+			zoomAnimation = new ZoomAnimation(zoom);
 			zoomAnimation.setDuration(400);
 			zoomAnimation.setFramesCount(7);
 			zoomAnimation.setView(this);
@@ -784,6 +780,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			}
 			//if (Map.this.zoomLevel != zoom) {
 			showZoomBackground = true;
+			zoomAnimation = null;
 			//}
 		}
 	}
