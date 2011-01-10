@@ -274,18 +274,6 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		//}
 		
 		PointF ca = mapToScreenAligned(center.x, center.y);
-		
-		if (showZoomBackground && zoomBackground != null) {
-			//Log.i(TAG, "drawing background   zoomPinch: "+zoomPinch);
-			PointF bgAlignedPos = mapToScreenAligned(bgPos.x, bgPos.y);
-			//bgAlignedPos.x -= zoomAlignOffset.x;
-			//bgAlignedPos.y -= zoomAlignOffset.y;
-			Log.i(TAG, "BG img pos: "+bgAlignedPos.x+", "+bgAlignedPos.y);
-			
-			//canvas.drawBitmap(zoomBackground, bgAlignedPos.x, -bgAlignedPos.y, null);
-			//canvas.drawBitmap(zoomBackground, (zoomBgStart.x-center.x)/getResolution(), -(zoomBgStart.y-center.y)/getResolution(), null);
-		}
-		
 		PointF o = screenToMap(0, 0);
 		if (o.x > bbox.maxX || o.y > bbox.maxY) {
 			return; // TODO: and what about overlays ?
@@ -371,15 +359,22 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			zoomBackground = null;
 		}
 		
-		if (drawOverlays) {
-			PointF startP = mapToScreen(bbox.minX, bbox.minY);
-			PointF endP = mapToScreen(bbox.maxX, bbox.maxY);
-			
-			mapStyle.setStrokeWidth(2f/zoomPinch);
-			canvas.drawRect(startP.x, startP.y+1, endP.x, endP.y-1, mapStyle);
-		}
-		canvas.restore();
 		
+		canvas.restore();
+		if (drawOverlays) {
+			PointF startP = mapToScreenAligned(bbox.minX, bbox.minY);
+			PointF endP = mapToScreenAligned(bbox.maxX, bbox.maxY);
+			float[] border = {startP.x, startP.y, endP.x, endP.y};
+			float maxValue = 5000;
+			for (int i = 0; i < 4; i++) {
+				if (border[i] > maxValue) {
+					border[i] = maxValue;
+				} else if (border[i] < -maxValue) {
+					border[i] = -maxValue;
+				}
+			}
+			canvas.drawRect(border[0], border[1], border[2], border[3], mapStyle);
+		}
 		/*
 		float fadeStrength = zoomPinch;
 		if (zoomPinch > 1f) {
@@ -712,8 +707,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		
 		@Override
 		public void onFrame(float fraction) {
-			center.x = startX + (x-startX)*fraction;
-			center.y = startY + (y-startY)*fraction;
+			setCenter(startX + (x-startX)*fraction, startY + (y-startY)*fraction);
 		}
 
 		@Override
