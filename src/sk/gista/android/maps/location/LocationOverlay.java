@@ -12,8 +12,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-
 import com.jhlabs.geom.Point2D;
 
 import sk.gista.android.maps.MapView;
@@ -21,7 +19,7 @@ import sk.gista.android.maps.Overlay;
 
 public class LocationOverlay implements Overlay, LocationListener, Listener {
 
-	private static final String TAG = LocationOverlay.class.getName();
+	private static final String TAG = LocationOverlay.class.getSimpleName();
 	
 	private Context context;
 	private MapView map;
@@ -52,10 +50,13 @@ public class LocationOverlay implements Overlay, LocationListener, Listener {
 		if (currentLocation != null) {
 			currentLocationPoint.x = currentLocation.getLongitude();
 			currentLocationPoint.y = currentLocation.getLatitude();
+			
+			//Log.i(TAG, currentLocationPoint.x+", "+currentLocationPoint.y);
 			map.getLayer().getProjection().transform(currentLocationPoint, projectedLocation);
-			//Log.i(TAG, format("projected position: [%f, %f]", projectedLocation.x, projectedLocation.y));
+			//Log.i(TAG, String.format("projected position: [%f, %f]", projectedLocation.x, projectedLocation.y));
 			PointF currentPos = map.mapToScreenAligned((float) projectedLocation.x, (float) projectedLocation.y);
-			float accuracy = zoom*(currentLocation.getAccuracy()/(float) map.getLayer().getResolutions()[map.getZoom()]);
+			//Log.i(TAG, "Location on screen: "+currentPos.x+", "+currentPos.y);
+			float accuracy = zoom*(currentLocation.getAccuracy()/map.getResolution());
 			//float accuracy = zoom*(75.0f/(float) map.getLayer().getResolutions()[map.getZoom()]); // for tests on emulator
 			canvas.drawArc(new RectF(currentPos.x-accuracy, currentPos.y-accuracy, currentPos.x+accuracy, currentPos.y+accuracy), 0, 360, true, accuracyStyle);
 			canvas.drawArc(new RectF(currentPos.x-3, currentPos.y-3, currentPos.x+3, currentPos.y+3), 0, 360, true, pointStyle);
