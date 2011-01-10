@@ -153,7 +153,9 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 				//setZoom(1);
 				onZoomChange(zoomLevel, zoomLevel);
 			}
-			mapListener.onLayerChanged(layer);
+			if (mapListener != null) {
+				mapListener.onLayerChanged(layer);
+			}
 		}
 	}
 	
@@ -288,7 +290,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		float compX = alignedCenter.x-ca.x;
 		float compY = alignedCenter.y-ca.y;
 		
-		Log.i(TAG, "Compensation: "+compX+", "+compY);
+		Log.i(TAG, "Zoom: "+zoomLevel+" scale: "+zoomPinch+" Compensation: "+compX+", "+compY);
 		
 		canvas.save();
 		canvas.translate(compX, compY);
@@ -302,15 +304,17 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			
 			//bgAlignedPos.x -= zoomAlignOffset.x;
 			//bgAlignedPos.y -= zoomAlignOffset.y;
-			Log.i(TAG, "BG img pos: "+bgAlignedPos.x+", "+bgAlignedPos.y);
+			//Log.i(TAG, "BG pos: "+bgPos.x+", "+bgPos.y);
+			Log.i(TAG, "BG img aligned pos: "+bgAlignedPos.x+", "+bgAlignedPos.y);
 			
 			canvas.save();
-			//Paint p = new Paint();
-			//p.setColor(Color.GREEN);
-			//canvas.drawRect(bgAlignedPos.x, bgAlignedPos.y, rightTop.x, rightTop.y, p);
+			Paint p = new Paint();
+			p.setColor(Color.GREEN);
+			canvas.drawRect(bgAlignedPos.x, bgAlignedPos.y, rightTop.x, rightTop.y, p);
 			canvas.scale(bgScale, -bgScale, bgAlignedPos.x, bgAlignedPos.y);
 			canvas.drawBitmap(zoomBackground, bgAlignedPos.x, bgAlignedPos.y-height, imagesStyle);
 			canvas.restore();
+			canvas.drawRect(bgAlignedPos.x, bgAlignedPos.y, bgAlignedPos.x+2, bgAlignedPos.y+2, p);
 		}
 		
 		canvas.save();
@@ -753,17 +757,34 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 				drawOverlays = true;
 				drawGraphicalScale = true;
 				
+				PointF ca = mapToScreenAligned(center.x, center.y);
+				float oldCompX = alignedCenter.x-ca.x;
+				float oldCompY = alignedCenter.y-ca.y;
+				Log.i(TAG, "Old comp: "+oldCompX +", "+oldCompY);
 				zoomPinch = 1f;
 				setZoom(zoom);
 				validateMap();
 				bgPos = screenToMap(0, 0);
 				bgRightTop = screenToMap(width, height);
 				
-				zoomAlignOffset = mapToScreenAligned(bgPos.x, bgPos.y);
-				//bgPos.x -= zoomAlignOffset.x*getResolution();
-				//bgPos.y -= zoomAlignOffset.y*getResolution();
+				ca = mapToScreenAligned(center.x, center.y);
+				float compX = alignedCenter.x-ca.x;
+				float compY = alignedCenter.y-ca.y;
 				
-				//Log.i(TAG, "Zoom Align offset: "+zoomAlignOffset.x+", "+zoomAlignOffset.y);
+				zoomAlignOffset = mapToScreenAligned(bgPos.x, bgPos.y);
+				/*
+				bgPos.x -= zoomAlignOffset.x*getResolution();
+				bgPos.y -= zoomAlignOffset.y*getResolution();
+				bgRightTop.x -= zoomAlignOffset.x*getResolution();
+				bgRightTop.y -= zoomAlignOffset.y*getResolution();
+				*/
+				
+				//bgPos.x -= oldCompX*getResolution();
+				//bgPos.y -= oldCompY*getResolution();
+				
+				Log.i(TAG, "Zoom Align offset: "+zoomAlignOffset.x+", "+zoomAlignOffset.y);
+				Log.i(TAG, "COMPENSATION: "+compX+", "+compY);
+				
 				//PointF test = mapToScreenAligned(bgPos.x, bgPos.y);
 				//Log.i(TAG, "test: "+test.x+", "+test.y);
 				//Log.i(TAG, "BG POS: "+bgPos.x +" ftppx: "+firstTilePositionPx.x +" resolution: "+getResolution());
