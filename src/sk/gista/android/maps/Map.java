@@ -282,16 +282,14 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			PointF rightTop = mapToScreenAligned(bgRightTop.x, bgRightTop.y);
 			float bgScale = (rightTop.x-bgAlignedPos.x)/(float) width;
 			
-			Log.i(TAG, "BG img aligned pos: "+bgAlignedPos.x+", "+bgAlignedPos.y);
-			
 			canvas.save();
-			Paint p = new Paint();
-			p.setColor(Color.GREEN);
-			canvas.drawRect(bgAlignedPos.x, bgAlignedPos.y, rightTop.x, rightTop.y, p);
+			//Log.i(TAG, "BG img aligned pos: "+bgAlignedPos.x+", "+bgAlignedPos.y);
+			//Paint p = new Paint();
+			//p.setColor(Color.GREEN);
+			//canvas.drawRect(bgAlignedPos.x, bgAlignedPos.y, rightTop.x, rightTop.y, p);
 			canvas.scale(bgScale, -bgScale, bgAlignedPos.x, bgAlignedPos.y);
 			canvas.drawBitmap(zoomBackground, bgAlignedPos.x, bgAlignedPos.y-height, imagesStyle);
 			canvas.restore();
-			canvas.drawRect(bgAlignedPos.x, bgAlignedPos.y, bgAlignedPos.x+2, bgAlignedPos.y+2, p);
 		}
 		
 		canvas.save();
@@ -332,7 +330,7 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 			}
 		}
 		if (notAvailableTiles == 0 && showZoomBackground) {
-			Log.i(TAG, "Have all tiles");
+			//Log.i(TAG, "Have all tiles");
 			showZoomBackground = false;
 			// TODO recycle bg or something better 
 			zoomBackground = null;
@@ -580,11 +578,9 @@ public class Map extends View implements TileListener, MapView, MapControlListen
 		invalidate();
 	}
 	
-	public boolean movementEnabled; 
 	@Override
 	public void onMove(float x, float y) {
-		if (movementEnabled)
-			setCenter(x, y);
+		setCenter(x, y);
 	}
 
 	@Override

@@ -15,6 +15,7 @@ import com.jhlabs.map.proj.ProjectionFactory;
 import sk.gista.android.app.About;
 import sk.gista.android.maps.MapView.MapListener;
 import sk.gista.android.maps.location.LocationOverlay;
+import sk.gista.android.overlays.PointOverlay;
 import sk.gista.android.settings.Settings;
 import sk.gista.android.utils.Utils;
 
@@ -94,7 +95,13 @@ public class Main extends Activity implements SensorEventListener, MapListener {
         
         locationOverlay= new LocationOverlay(this, map);// TODO: remove map parameter
         map.addOverlay(locationOverlay);
-        
+        /*
+        // some fixed point overlays for debugging 
+        PointOverlay point1 = new PointOverlay(2364190.5f, 6274874.0f);
+        PointOverlay point2 = new PointOverlay(2364195.5f, 6274875.0f);
+        map.addOverlay(point1);
+        map.addOverlay(point2);
+        */
         map.setOnZoomChangeListener(this);
         
         controlPanel = findViewById(R.id.control_panel);

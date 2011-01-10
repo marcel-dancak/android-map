@@ -35,7 +35,7 @@ public class TilesManager {
 	public TilesManager(MapView map) {
 		this.map = map;
 		this.layer = map.getLayer();
-		tilesCache = new MemoryCache(map, 10);
+		tilesCache = new MemoryCache(map, 25);
 		
 		NetworkDebugger.server = "192.168.1.110";
 		NetworkDebugger.debuggingEnabled = true;
