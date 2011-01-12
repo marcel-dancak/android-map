@@ -74,6 +74,9 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 	private ImageButton zoomIn;
 	private ImageButton zoomOut;
 	private ImageButton myLocation;
+	private ImageButton home;
+	private ImageButton info;
+	
 	private View controlPanel;
 	
 	List<TmsLayer> layers;
@@ -108,6 +111,7 @@ public class Main extends Activity implements SensorEventListener, MapListener {
         zoomIn = (ImageButton) findViewById(R.id.zoom_in);
         zoomOut = (ImageButton) findViewById(R.id.zoom_out);
         myLocation = (ImageButton) findViewById(R.id.mylocation);
+        home = (ImageButton) findViewById(R.id.home);
         Log.i(TAG, "cache enabled: "+zoomOut.isDrawingCacheEnabled());
         
         zoomIn.setOnClickListener(new View.OnClickListener() {
@@ -144,6 +148,17 @@ public class Main extends Activity implements SensorEventListener, MapListener {
 					BBox bbox = map.getLayer().getBoundingBox();
 					map.moveToLocation((bbox.minX + bbox.maxX)/2f, (bbox.minY + bbox.maxY)/2f);
 				}
+			}
+		});
+        
+        home.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				BBox bbox = map.getLayer().getBoundingBox();
+				map.setCenter((bbox.minX+bbox.maxX)/2f, (bbox.minY+bbox.maxY)/2f);
+				map.setZoom(0);
+				map.redraw();
 			}
 		});
         

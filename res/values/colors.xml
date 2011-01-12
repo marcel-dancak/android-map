@@ -6,4 +6,5 @@
     <color name="black">#000000</color>
     <color name="transparent">#01000000</color>
     <color name="blank">#00111111</color>
+    <color name="panel_bg">#96888888</color>
 </resources>
