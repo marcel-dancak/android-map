@@ -44,8 +44,8 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class Main extends Activity implements SensorEventListener, MapListener {
-	private static final String TAG = Main.class.getName();
+public class Gisplan extends Activity implements SensorEventListener, MapListener {
+	private static final String TAG = Gisplan.class.getName();
 	
 	static final int DIALOG_LAYERS_ID = 0;
 
