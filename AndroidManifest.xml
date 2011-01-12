@@ -16,7 +16,7 @@
 	</activity>
 		<activity android:label="@string/about_title" android:name="sk.gista.android.app.About" android:theme="@android:style/Theme.Dialog">
 	</activity>
-
+	<activity android:name="sk.gista.android.app.Info" android:theme="@android:style/Theme.Dialog"/>
 	</application>
 	<uses-permission android:name="android.permission.INTERNET"/>
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>

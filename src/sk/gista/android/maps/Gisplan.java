@@ -13,6 +13,7 @@ import com.jhlabs.map.proj.Projection;
 import com.jhlabs.map.proj.ProjectionFactory;
 
 import sk.gista.android.app.About;
+import sk.gista.android.app.Info;
 import sk.gista.android.maps.MapView.MapListener;
 import sk.gista.android.maps.location.LocationOverlay;
 import sk.gista.android.overlays.PointOverlay;
@@ -39,9 +40,13 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.MeasureSpec;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class Gisplan extends Activity implements SensorEventListener, MapListener {
@@ -112,7 +117,7 @@ public class Gisplan extends Activity implements SensorEventListener, MapListene
         zoomOut = (ImageButton) findViewById(R.id.zoom_out);
         myLocation = (ImageButton) findViewById(R.id.mylocation);
         home = (ImageButton) findViewById(R.id.home);
-        Log.i(TAG, "cache enabled: "+zoomOut.isDrawingCacheEnabled());
+        info = (ImageButton) findViewById(R.id.info);
         
         zoomIn.setOnClickListener(new View.OnClickListener() {
 			
@@ -159,6 +164,14 @@ public class Gisplan extends Activity implements SensorEventListener, MapListene
 				map.setCenter((bbox.minX+bbox.maxX)/2f, (bbox.minY+bbox.maxY)/2f);
 				map.setZoom(0);
 				map.redraw();
+			}
+		});
+        
+        info.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				showInfo();
 			}
 		});
         
@@ -466,5 +479,22 @@ public class Gisplan extends Activity implements SensorEventListener, MapListene
 	@Override
 	public void onLayerChanged(TmsLayer layer) {
     	controlPanel.setVisibility(layer == null? View.INVISIBLE : View.VISIBLE);
+	}
+	
+	private void showInfo() {
+		/*
+		TextView content = new TextView(this);
+		final PopupWindow w = new PopupWindow(this);
+		w.setContentView(content);
+		w.setHeight(MeasureSpec.EXACTLY);
+		w.setWidth(MeasureSpec.EXACTLY);
+		w.setWidth(200);
+		w.setHeight(100);
+		w.setFocusable(true);
+		w.showAtLocation((View) map, 0, 40, 40);
+		w.update();
+		*/
+		Intent showInfo = new Intent(this, Info.class);
+		startActivity(showInfo);
 	}
 }
